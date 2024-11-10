@@ -120,6 +120,45 @@
             font-weight: bold;
             font-size: 18px;
         }
+
+        .event-link-container {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .event-link {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: white;
+            color: #666;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .copy-button {
+            padding: 8px 16px;
+            background: var(--tiffany-blue);
+            color: #2C3E50;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .copy-button:hover {
+            background: var(--header-bg);
+            color: white;
+        }
     </style>
 </head>
 <body>

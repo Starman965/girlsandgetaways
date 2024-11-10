@@ -105,9 +105,19 @@ async function createEvent(e) {
     }
 }
 
+window.copyEventLink = function(eventId) {
+    const voteUrl = `${window.location.origin}/vote.html?event=${eventId}`;
+    navigator.clipboard.writeText(voteUrl).then(() => {
+        alert('Link copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+    });
+};
+
 function renderEventReport(eventId, eventData) {
     const votes = eventData.participants || {};
     const dateRanges = eventData.dates || [];
+    const voteUrl = `${window.location.origin}/vote.html?event=${eventId}`;
     
     // Calculate totals for each date range
     const totals = dateRanges.map((_, index) => {
@@ -121,6 +131,11 @@ function renderEventReport(eventId, eventData) {
             <h3>${eventData.title}</h3>
             <p>${eventData.description || ''}</p>
             
+            <div class="event-link-container">
+                <input class="event-link" type="text" readonly value="${voteUrl}">
+                <button class="copy-button" onclick="copyEventLink('${eventId}')">Copy Link</button>
+            </div>
+
             <div class="votes-summary">
                 <h4>Summary</h4>
                 <table class="report-table">
