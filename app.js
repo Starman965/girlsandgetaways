@@ -58,12 +58,10 @@ window.removeDate = function(startDate, endDate) {
 // };
 
 // Add this new function
-window.copyEventLink = async function(eventId) {
+window.copyEventLink = async function() {
     try {
         const linkInput = document.getElementById('shareLinkInput');
-        const textToCopy = linkInput?.value || `${window.location.origin}/vote.html?event=${eventId}`;
-        
-        await navigator.clipboard.writeText(textToCopy);
+        await navigator.clipboard.writeText(linkInput.value);
         alert('Link copied to clipboard!');
     } catch (err) {
         console.error('Failed to copy:', err);
@@ -119,10 +117,13 @@ async function createEvent(e) {
         const eventsRef = ref(database, 'events');
         const newEventRef = push(eventsRef);
         await set(newEventRef, eventData);
-        const voteUrl = `${window.location.origin}/vote.html?event=${newEventRef.key}`;
         
-        document.getElementById('shareLinkInput').value = voteUrl;
+        // Generate and display the vote URL
+        const voteUrl = `${window.location.origin}/vote.html?event=${newEventRef.key}`;
+        const shareLinkInput = document.getElementById('shareLinkInput');
+        shareLinkInput.value = voteUrl;
         document.getElementById('shareLink').style.display = 'block';
+        
         console.log('Event created successfully:', newEventRef.key);
     } catch (error) {
         console.error("Error creating event: ", error);
