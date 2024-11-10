@@ -180,9 +180,11 @@
         </form>
         
         <div id="shareLink" style="display: none;">
-            <p>Share this link:</p>
-            <input id="shareLinkInput" readonly>
-            <button onclick="copyLink()">Copy Link</button>
+            <h3>Share this Event</h3>
+            <div class="event-link-container">
+                <input class="event-link" type="text" id="shareLinkInput" readonly>
+                <button class="copy-button" onclick="copyEventLink()">Copy Link</button>
+            </div>
         </div>
     </div>
 

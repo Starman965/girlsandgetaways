@@ -49,10 +49,35 @@ window.removeDate = function(startDate, endDate) {
     selectedDates = selectedDates.filter(d => !(d.start === startDate && d.end === endDate));
     renderDates();
 };
-window.copyLink = function() {
-    const linkInput = document.getElementById('shareLinkInput');
-    linkInput.select();
-    document.execCommand('copy');
+
+// Remove this old function
+// window.copyLink = function() {
+//     const linkInput = document.getElementById('shareLinkInput');
+//     linkInput.select();
+//     document.execCommand('copy');
+// };
+
+// Add this new function
+window.copyEventLink = async function(eventId) {
+    try {
+        const linkInput = document.getElementById('shareLinkInput');
+        const textToCopy = linkInput?.value || `${window.location.origin}/vote.html?event=${eventId}`;
+        
+        await navigator.clipboard.writeText(textToCopy);
+        alert('Link copied to clipboard!');
+    } catch (err) {
+        console.error('Failed to copy:', err);
+        // Fallback to old method if Clipboard API fails
+        const linkInput = document.getElementById('shareLinkInput');
+        linkInput.select();
+        try {
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+        } catch (e) {
+            console.error('Fallback copy failed:', e);
+            alert('Failed to copy link. Please copy it manually.');
+        }
+    }
 };
 
 function formatDateForDisplay(dateStr) {
@@ -103,15 +128,6 @@ async function createEvent(e) {
         console.error("Error creating event: ", error);
         alert("Error creating event. Please try again.");
     }
-}
-
-window.copyEventLink = function(eventId) {
-    const voteUrl = `${window.location.origin}/vote.html?event=${eventId}`;
-    navigator.clipboard.writeText(voteUrl).then(() => {
-        alert('Link copied to clipboard!');
-    }).catch(err => {
-        console.error('Failed to copy:', err);
-    });
 };
 
 function renderEventReport(eventId, eventData) {
