@@ -414,21 +414,7 @@
             });
             table.appendChild(headerRow);
 
-            // Existing participants - exclude current voter
-            Object.entries(event.participants || {}).forEach(([name, data]) => {
-                if (name !== voterName) { // Only show other participants
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td>${name}</td>`;
-                    data.votes.forEach(vote => {
-                        const symbol = vote === 2 ? '✓' : '✗';
-                        const voteClass = vote === 2 ? 'vote-yes' : 'vote-no';
-                        row.innerHTML += `<td class="${voteClass}">${symbol}</td>`;
-                    });
-                    table.appendChild(row);
-                }
-            });
-
-            // Voting row
+            // Voting row - now inserted first
             const votingRow = document.createElement('tr');
             votingRow.innerHTML = `<td><strong>${voterName}</strong></td>`;
             
@@ -452,6 +438,20 @@
                     <td onclick="window.toggleVote(${index})" class="${cellClass}">${cellContent}</td>`;
             });
             table.appendChild(votingRow);
+
+            // Other participants - after the voting row
+            Object.entries(event.participants || {}).forEach(([name, data]) => {
+                if (name !== voterName) { // Only show other participants
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${name}</td>`;
+                    data.votes.forEach(vote => {
+                        const symbol = vote === 2 ? '✓' : '✗';
+                        const voteClass = vote === 2 ? 'vote-yes' : 'vote-no';
+                        row.innerHTML += `<td class="${voteClass}">${symbol}</td>`;
+                    });
+                    table.appendChild(row);
+                }
+            });
 
             container.innerHTML = '';
             container.appendChild(table);
@@ -478,7 +478,8 @@
             }
             
             currentVotes[index] = newValue;
-            const votingRow = document.querySelector('.voting-table tr:last-child');
+            // Get the voter's row - it's always the first row after the header
+            const votingRow = document.querySelector('.voting-table tr:nth-child(2)');
             const cell = votingRow.children[index + 1];
             
             cell.className = newClass;
