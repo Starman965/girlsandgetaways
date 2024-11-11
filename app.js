@@ -18,7 +18,8 @@ import {
     createUserWithEmailAndPassword, 
     onAuthStateChanged, 
     signOut,
-    updateProfile
+    updateProfile,
+    updateEmail         // Add this import
 } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
 
 // Initialize Firebase
@@ -60,16 +61,16 @@ async function loginWithEmail() {
 }
 
 async function signupWithEmail() {
-    const email = document.getElementById('emailInput').value;
-    const password = document.getElementById('passwordInput').value;
+    const name = document.getElementById('signupNameInput').value;
+    const email = document.getElementById('signupEmailInput').value;
+    const password = document.getElementById('signupPasswordInput').value;
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Set display name as email username
-        const displayName = email.split('@')[0];
+        // Set display name as entered name
         await updateProfile(user, {
-            displayName: displayName
+            displayName: name
         });
         
     } catch (error) {
@@ -841,6 +842,39 @@ window.editPerson = async function(personId) {
     }
 };
 
+// Add this new function
+async function updateProfileInfo(e) {
+    e.preventDefault();
+    const newName = document.getElementById('profileName').value;
+    const newEmail = document.getElementById('profileEmail').value;
+    
+    if (!newName || !newEmail) {
+        alert('Please enter both name and email');
+        return;
+    }
+
+    try {
+        // Update display name
+        await updateProfile(auth.currentUser, {
+            displayName: newName
+        });
+
+        // Update email using the correct method
+        await updateEmail(auth.currentUser, newEmail);
+        
+        alert('Profile updated successfully');
+        document.getElementById('userName').textContent = newName;
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        // More specific error message
+        if (error.code === 'auth/requires-recent-login') {
+            alert("For security reasons, please log out and log back in before changing your email.");
+        } else {
+            alert("Error updating profile: " + error.message);
+        }
+    }
+}
+
 // Update the DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', () => {
     // Add authentication event listeners only if elements exist
@@ -891,6 +925,9 @@ document.addEventListener('DOMContentLoaded', () => {
         handleEventTypeChange();
     }
 
+    // Add event listener for profile update
+    document.getElementById('profileForm')?.addEventListener('submit', updateProfileInfo);
+
     // Initialize authentication state
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -902,6 +939,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userNameElement) {
                 userNameElement.textContent = user.displayName || user.email;
             }
+
+            // Populate profile form
+            document.getElementById('profileName').value = user.displayName || '';
+            document.getElementById('profileEmail').value = user.email || '';
             
             loadEvents();
             

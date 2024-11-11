@@ -702,3 +702,38 @@
             /* ...existing code... */
             color: var(--subhead-color); /* Update subhead color */
         }
+
+/* Profile Form Styles */
+.profile-form {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+}
+
+.profile-form .form-group {
+    margin-bottom: 20px;
+}
+
+.profile-form label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--subhead-color);
+    font-weight: 500;
+}
+
+.profile-form input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.profile-form .submit-btn {
+    width: 100%;
+    margin-top: 20px;
+}

@@ -29,6 +29,7 @@
             </div>
             <div id="signupView" style="display: none;">
                 <h2>Create Account</h2>
+                <input type="text" id="signupNameInput" placeholder="Full Name" required>
                 <input type="email" id="signupEmailInput" placeholder="Email" required>
                 <input type="password" id="signupPasswordInput" placeholder="Password" required>
                 <input type="password" id="signupConfirmPasswordInput" placeholder="Confirm Password" required>
@@ -185,6 +186,7 @@
         });
 
         document.getElementById('emailSignupBtn').addEventListener('click', async () => {
+            const name = document.getElementById('signupNameInput').value;
             const email = document.getElementById('signupEmailInput').value;
             const password = document.getElementById('signupPasswordInput').value;
             const confirmPassword = document.getElementById('signupConfirmPasswordInput').value;
@@ -201,11 +203,10 @@
 
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                // Set display name as email username
+                // Set display name as entered name
                 if (userCredential.user) {
-                    const displayName = email.split('@')[0];
                     await updateProfile(userCredential.user, {
-                        displayName: displayName
+                        displayName: name
                     });
                 }
                 window.location.href = 'index.html';

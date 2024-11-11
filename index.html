@@ -28,6 +28,7 @@
             <button class="tab-button" data-tab="events">Events</button>
             <button class="tab-button" data-tab="tribes">Tribes</button>
             <button class="tab-button" data-tab="instructions">Instructions</button>
+            <button class="tab-button" data-tab="profile">Profile</button>
         </div>
 
         <div id="createEventView" class="tab-content active">
@@ -179,6 +180,29 @@
             <h3>Step 4: Share the Event</h3>
             <p>After creating an event, you'll get a shareable link. Copy this link and send it to your tribe members so they can vote on the dates. You can also open the link directly from the app.</p>
             <p>That's it! You're all set to manage your events and tribes with ease. If you have any questions, feel free to reach out. Happy planning!</p>
+        </div>
+
+        <div id="editProfileView" class="tab-content" style="display: none;">
+            <h2>Edit Profile</h2>
+            <form id="editProfileForm">
+                <input type="text" id="editUserName" placeholder="Full Name" required>
+                <button type="submit" class="submit-btn">Update Profile</button>
+            </form>
+        </div>
+
+        <div id="profileView" class="tab-content">
+            <h2>Profile Settings</h2>
+            <form id="profileForm" class="profile-form">
+                <div class="form-group">
+                    <label for="profileName">Display Name</label>
+                    <input type="text" id="profileName" placeholder="Your display name" required>
+                </div>
+                <div class="form-group">
+                    <label for="profileEmail">Email Address</label>
+                    <input type="email" id="profileEmail" placeholder="Your email address" required>
+                </div>
+                <button type="submit" class="submit-btn">Update Profile</button>
+            </form>
         </div>
     </div>
 
