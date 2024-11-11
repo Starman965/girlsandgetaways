@@ -7,7 +7,8 @@ import {
     set, 
     push,
     get,
-    onValue
+    onValue,
+    remove    // Add this import
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
 // Initialize Firebase
@@ -74,6 +75,20 @@ window.copyEventLink = async function() {
         } catch (e) {
             console.error('Fallback copy failed:', e);
             alert('Failed to copy link. Please copy it manually.');
+        }
+    }
+};
+
+// Add delete event function
+window.deleteEvent = async function(eventId) {
+    if (confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+        try {
+            const eventRef = ref(database, `events/${eventId}`);
+            await remove(eventRef);
+            alert('Event deleted successfully');
+        } catch (error) {
+            console.error("Error deleting event:", error);
+            alert("Error deleting event. Please try again.");
         }
     }
 };
@@ -145,7 +160,10 @@ function renderEventReport(eventId, eventData) {
 
     return `
         <div class="event-report">
-            <h3>${eventData.title}</h3>
+            <div class="event-header">
+                <h3>${eventData.title}</h3>
+                <button class="delete-event-btn" onclick="deleteEvent('${eventId}')">Delete Event</button>
+            </div>
             <p>${eventData.description || ''}</p>
             
             <div class="event-link-container">
