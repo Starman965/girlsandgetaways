@@ -241,13 +241,20 @@
 
         .date-field {
             flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        .date-field label {
-            display: block;
-            margin-bottom: 5px;
-            color: #2C3E50;
-            font-weight: 500;
+        .date-field-group {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            flex: 1;
+        }
+
+        #addDateBtn {
+            align-self: flex-end;
+            white-space: nowrap;
         }
 
         .submit-container {
@@ -270,6 +277,11 @@
             margin: 20px 0;
             padding: 10px 0;
             border-bottom: 1px solid var(--border-color);
+        }
+
+        .event-type h3 {
+            margin: 0 0 15px 0;
+            color: #2C3E50;
         }
 
         .radio-label {
@@ -306,4 +318,115 @@
         #addDaysBtn {
             margin-top: 10px;
             display: block;
+        }
+
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-button.active {
+            color: var(--tiffany-blue);
+            border-bottom: 2px solid var(--tiffany-blue);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Tribes Management */
+        .tribes-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .section-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .list-container {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .member-selection {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .checkbox-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .person-item, .tribe-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .person-item .actions, .tribe-item .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .tribes-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2C3E50;
+            font-weight: 500;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            background-color: white;
         }

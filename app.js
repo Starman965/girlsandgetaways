@@ -184,6 +184,12 @@ function renderDates() {
 async function createEvent(e) {
     e.preventDefault();
     
+    const tribeId = document.getElementById('tribeSelect').value;
+    if (!tribeId) {
+        alert('Please select a tribe for this event');
+        return;
+    }
+
     const eventData = {
         title: document.getElementById('eventTitle').value,
         description: document.getElementById('eventDescription').value,
@@ -204,7 +210,8 @@ async function createEvent(e) {
         }),
         createdBy: 'anonymous',
         participants: {},
-        created: new Date().toISOString()
+        created: new Date().toISOString(),
+        tribeId: document.getElementById('tribeSelect').value
     };
 
     try {
@@ -323,14 +330,15 @@ function renderEventReport(eventId, eventData) {
     `;
 }
 
-async function loadEventReports() {
+// Change function name from loadEventReports to loadEvents
+async function loadEvents() {
     const eventsRef = ref(database, 'events');
     onValue(eventsRef, (snapshot) => {
         const events = snapshot.val() || {};
-        const reportsHtml = Object.entries(events)
+        const eventsHtml = Object.entries(events)
             .map(([eventId, eventData]) => renderEventReport(eventId, eventData))
             .join('');
-        document.getElementById('eventReports').innerHTML = reportsHtml;
+        document.getElementById('eventsList').innerHTML = eventsHtml;
     });
 }
 
@@ -360,6 +368,189 @@ function handleEventTypeChange() {
     }
 }
 
+// Add tribe management functions
+async function addPerson(e) {
+    e.preventDefault();
+    const fullName = document.getElementById('personName').value.trim();
+    
+    if (fullName) {
+        const [firstName, ...lastNameParts] = fullName.split(' ');
+        const lastName = lastNameParts.join(' ');
+        
+        if (!lastName) {
+            alert('Please enter both first and last name');
+            return;
+        }
+        
+        try {
+            const peopleRef = ref(database, 'people');
+            const newPersonRef = push(peopleRef);
+            await set(newPersonRef, {
+                firstName,
+                lastName,
+                created: new Date().toISOString()
+            });
+            
+            document.getElementById('personName').value = '';
+        } catch (error) {
+            console.error("Error adding person:", error);
+            alert("Error adding person");
+        }
+    }
+}
+
+async function createTribe(e) {
+    e.preventDefault();
+    const tribeName = document.getElementById('tribeName').value.trim();
+    const selectedMembers = Array.from(document.querySelectorAll('#memberCheckboxes input:checked'))
+        .map(checkbox => checkbox.value);
+    
+    if (selectedMembers.length === 0) {
+        alert('Please select at least one member');
+        return;
+    }
+    
+    try {
+        const tribesRef = ref(database, 'tribes');
+        const newTribeRef = push(tribesRef);
+        await set(newTribeRef, {
+            name: tribeName,
+            members: selectedMembers,
+            created: new Date().toISOString()
+        });
+        
+        document.getElementById('tribeName').value = '';
+        document.querySelectorAll('#memberCheckboxes input').forEach(cb => cb.checked = false);
+    } catch (error) {
+        console.error("Error creating tribe:", error);
+        alert("Error creating tribe");
+    }
+}
+
+function renderPeople(people) {
+    const peopleList = document.getElementById('peopleList');
+    const memberCheckboxes = document.getElementById('memberCheckboxes');
+    
+    if (!peopleList || !memberCheckboxes) return;
+    
+    peopleList.innerHTML = Object.entries(people || {}).map(([id, person]) => `
+        <div class="person-item">
+            <span>${person.firstName} ${person.lastName}</span>
+            <div class="actions">
+                <button onclick="window.editPerson('${id}')">Edit Name</button>
+                <button onclick="window.deletePerson('${id}')" class="delete-btn">Delete</button>
+            </div>
+        </div>
+    `).join('');
+    
+    memberCheckboxes.innerHTML = Object.entries(people || {}).map(([id, person]) => `
+        <label class="member-checkbox">
+            <input type="checkbox" value="${id}">
+            ${person.firstName} ${person.lastName}
+        </label>
+    `).join('');
+}
+
+function renderTribes(tribes, people) {
+    const tribesList = document.getElementById('tribesList');
+    if (!tribesList) return;
+    
+    tribesList.innerHTML = Object.entries(tribes || {}).map(([id, tribe]) => {
+        const memberNames = tribe.members
+            .map(memberId => {
+                const person = people[memberId];
+                return person ? `${person.firstName} ${person.lastName}` : '';
+            })
+            .filter(name => name)
+            .join(', ');
+            
+        return `
+            <div class="tribe-item">
+                <div>
+                    <strong>${tribe.name}</strong>
+                    <div class="tribe-members">${memberNames}</div>
+                </div>
+                <div class="actions">
+                    <button onclick="window.editTribe('${id}')">Edit</button>
+                    <button onclick="window.deleteTribe('${id}')" class="delete-btn">Delete</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Add these to window object
+window.editPerson = async function(personId) {
+    const personRef = ref(database, `people/${personId}`);
+    const snapshot = await get(personRef);
+    const person = snapshot.val();
+    
+    const fullName = prompt('Edit name (First Last):', `${person.firstName} ${person.lastName}`);
+    
+    if (fullName) {
+        const [firstName, ...lastNameParts] = fullName.trim().split(' ');
+        const lastName = lastNameParts.join(' ');
+        
+        if (firstName && lastName) {
+            await set(personRef, {
+                ...person,
+                firstName,
+                lastName
+            });
+        } else {
+            alert('Please enter both first and last name');
+        }
+    }
+};
+
+window.deletePerson = async function(personId) {
+    if (confirm('Are you sure you want to delete this person?')) {
+        try {
+            await remove(ref(database, `people/${personId}`));
+        } catch (error) {
+            console.error("Error deleting person:", error);
+            alert("Error deleting person");
+        }
+    }
+};
+
+window.editTribe = async function(tribeId) {
+    const tribeRef = ref(database, `tribes/${tribeId}`);
+    const snapshot = await get(tribeRef);
+    const tribe = snapshot.val();
+    
+    const newName = prompt('Edit tribe name:', tribe.name);
+    if (newName) {
+        await set(tribeRef, {
+            ...tribe,
+            name: newName
+        });
+    }
+};
+
+window.deleteTribe = async function(tribeId) {
+    if (confirm('Are you sure you want to delete this tribe?')) {
+        try {
+            await remove(ref(database, `tribes/${tribeId}`));
+        } catch (error) {
+            console.error("Error deleting tribe:", error);
+            alert("Error deleting tribe");
+        }
+    }
+};
+
+// Add function to populate tribe dropdown
+function populateTribeDropdown(tribes, people) {
+    const tribeSelect = document.getElementById('tribeSelect');
+    if (!tribeSelect) return;
+    
+    tribeSelect.innerHTML = '<option value="">Choose a tribe...</option>' +
+        Object.entries(tribes || {}).map(([id, tribe]) => {
+            const memberCount = tribe.members.length;
+            return `<option value="${id}">${tribe.name} (${memberCount} members)</option>`;
+        }).join('');
+}
+
 // Initialize - move this to DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('eventForm').addEventListener('submit', createEvent);
@@ -370,7 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addDate();
         }
     });
-    loadEventReports();
+    loadEvents(); // Changed from loadEventReports()
     
     // Add event listeners for radio buttons
     document.querySelectorAll('input[name="eventType"]').forEach(radio => {
@@ -378,4 +569,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     handleEventTypeChange(); // Initialize the view
+    
+    // Add tab switching listeners
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            button.classList.add('active');
+            document.getElementById(button.dataset.tab + 'View').classList.add('active');
+        });
+    });
+    
+    // Add tribe management form listeners
+    document.getElementById('personForm')?.addEventListener('submit', addPerson);
+    document.getElementById('tribeForm')?.addEventListener('submit', createTribe);
+    
+    // Set up real-time listeners for people and tribes
+    const peopleRef = ref(database, 'people');
+    const tribesRef = ref(database, 'tribes');
+    
+    onValue(peopleRef, (snapshot) => {
+        const people = snapshot.val() || {};
+        renderPeople(people);
+    });
+    
+    onValue(tribesRef, (snapshot) => {
+        get(peopleRef).then(peopleSnap => {
+            const tribes = snapshot.val() || {};
+            const people = peopleSnap.val() || {};
+            renderTribes(tribes, people);
+            populateTribeDropdown(tribes, people); // Add this line
+        });
+    });
 });

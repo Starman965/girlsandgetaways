@@ -26,20 +26,15 @@
     <div id="nameCaptureModal" class="name-capture">
         <div class="name-capture-content">
             <h2>Welcome!</h2>
-            <p>Please select your name to continue</p>
-            <select id="voterName" class="name-select">
-                <option value="">Choose your name...</option>
-                <option value="Annie">Annie</option>
-                <option value="Barrie">Barrie</option>
-                <option value="Dorothy">Dorothy</option>
-                <option value="Lisa">Lisa</option>
-                <option value="Mindy">Mindy</option>
-                <option value="Patti">Patti</option>
-                <option value="Sue">Sue</option>
-                <option value="Tiffanie">Tiffanie</option>
-                <option value="Vena">Vena</option>
-            </select>
-            <button class="submit-btn" onclick="startVoting()">Continue</button>
+            <p id="loadingMessage">Loading...</p>
+            <p id="errorMessage" style="color: red; display: none;"></p>
+            <div id="nameSelectContainer" style="display: none;">
+                <p>Please select your name to continue</p>
+                <select id="voterName" class="name-select">
+                    <option value="">Choose your name...</option>
+                </select>
+                <button class="submit-btn" onclick="startVoting()">Continue</button>
+            </div>
         </div>
     </div>
 
@@ -221,31 +216,92 @@
 
         async function loadEventData() {
             try {
+                console.log('Loading event data...');
                 const eventId = new URLSearchParams(window.location.search).get('event');
                 if (!eventId) {
                     throw new Error('No event ID provided');
                 }
+                console.log('Event ID:', eventId);
 
                 const eventRef = ref(database, `events/${eventId}`);
                 const eventSnap = await get(eventRef);
                 
-                if (eventSnap.exists()) {
-                    const event = eventSnap.val();
-                    document.getElementById('eventTitleDisplay').textContent = event.title;
-                    document.getElementById('eventDescriptionDisplay').textContent = event.description;
-                    
-                    // Check for existing votes
-                    if (event.participants && event.participants[voterName]) {
-                        currentVotes = event.participants[voterName].votes;
-                    }
-                    
-                    renderVotingTable(event);
-                } else {
+                if (!eventSnap.exists()) {
                     throw new Error('Event not found');
                 }
+
+                const event = eventSnap.val();
+                console.log('Event data:', event);
+
+                document.getElementById('eventTitleDisplay').textContent = event.title;
+                document.getElementById('eventDescriptionDisplay').textContent = event.description;
+                
+                if (!event.tribeId) {
+                    throw new Error('No tribe assigned to this event');
+                }
+                console.log('Tribe ID:', event.tribeId);
+
+                // Get tribe data
+                const tribeRef = ref(database, `tribes/${event.tribeId}`);
+                const tribeSnap = await get(tribeRef);
+                
+                if (!tribeSnap.exists()) {
+                    throw new Error('Tribe not found');
+                }
+
+                const tribe = tribeSnap.val();
+                console.log('Tribe data:', tribe);
+
+                if (!tribe.members || !tribe.members.length) {
+                    throw new Error('No members in tribe');
+                }
+
+                // Get all member data simultaneously
+                console.log('Fetching member data...');
+                const memberData = {};
+                for (const memberId of tribe.members) {
+                    try {
+                        const memberSnap = await get(ref(database, `people/${memberId}`));
+                        if (memberSnap.exists()) {
+                            memberData[memberId] = memberSnap.val();
+                        }
+                    } catch (e) {
+                        console.error(`Error fetching member ${memberId}:`, e);
+                    }
+                }
+
+                console.log('Member data:', memberData);
+
+                // Populate voter select
+                const voterSelect = document.getElementById('voterName');
+                voterSelect.innerHTML = '<option value="">Choose your name...</option>';
+                
+                Object.entries(memberData)
+                    .sort(([,a], [,b]) => (a.firstName + a.lastName).localeCompare(b.firstName + b.lastName))
+                    .forEach(([, member]) => {
+                        const option = document.createElement('option');
+                        option.value = member.firstName;
+                        option.textContent = `${member.firstName} ${member.lastName}`;
+                        voterSelect.appendChild(option);
+                    });
+
+                // Show the name selection
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('nameSelectContainer').style.display = 'block';
+
+                if (voterName && event.participants && event.participants[voterName]) {
+                    currentVotes = event.participants[voterName].votes;
+                }
+                
+                if (voterName) {
+                    renderVotingTable(event);
+                }
+
             } catch (error) {
-                alert('Error loading event: ' + error.message);
                 console.error('Error loading event:', error);
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('errorMessage').style.display = 'block';
             }
         }
 
@@ -273,6 +329,9 @@
                 window.startVoting();
             }
         });
+
+        // Initialize immediately when the script loads
+        loadEventData().catch(console.error);
     </script>
     <div class="instructions">
         <h1>How to Submit</h1>
@@ -290,4 +349,4 @@
     </div>
 
 </body>
-</html>  
+</html>
