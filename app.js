@@ -163,6 +163,14 @@ async function createEvent(e) {
         shareLinkInput.value = voteUrl;
         document.getElementById('shareLink').style.display = 'block';
         
+        // Clear the form
+        document.getElementById('eventTitle').value = '';
+        document.getElementById('eventDescription').value = '';
+        document.getElementById('dateInput').value = '';
+        document.getElementById('endDateInput').value = '';
+        selectedDates = [];
+        renderDates();
+        
         console.log('Event created successfully:', newEventRef.key);
     } catch (error) {
         console.error("Error creating event: ", error);
