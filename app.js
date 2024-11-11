@@ -18,6 +18,9 @@ const database = getDatabase(app);
 
 let selectedDates = [];
 
+// Add these variables at the top level after database initialization
+let currentEditingTribeId = null;
+
 // Event handler functions
 function addDate() {
     const startDate = document.getElementById('dateInput').value;
@@ -247,22 +250,34 @@ function renderEventReport(eventId, eventData) {
     
     // Calculate totals for each date range
     const totals = dateRanges.map((_, index) => {
-        const yesVotes = Object.values(votes).filter(p => p.votes[index] === 2).length;
-        const noVotes = Object.values(votes).filter(p => p.votes[index] === 0).length;
+        const yesVotes = Object.values(votes).filter(p => p.votes?.[index] === 2).length;
+        const noVotes = Object.values(votes).filter(p => p.votes?.[index] === 0).length;
         return { yes: yesVotes, no: noVotes };
     });
-
+    
     return `
         <div class="event-report">
             <div class="event-header">
-                <h3>${eventData.title}</h3>
+                <div class="event-title-section">
+                    <h3>${eventData.title}
+                        <button class="edit-icon" onclick="window.editEventField('${eventId}', 'title', '${eventData.title}')">
+                            ✏️
+                        </button>
+                    </h3>
+                </div>
                 <button class="delete-event-btn" onclick="deleteEvent('${eventId}')">Delete Event</button>
             </div>
-            <p>${eventData.description || ''}</p>
-            
+            <div class="description-container">
+                <p class="event-description">${eventData.description || 'No description'}</p>
+                <button class="edit-icon" onclick="window.editEventField('${eventId}', 'description', '${eventData.description || ''}')">
+                    ✏️
+                </button>
+            </div>
+
             <div class="event-link-container">
                 <input class="event-link" type="text" readonly value="${voteUrl}" data-event-id="${eventId}">
                 <button class="copy-button" onclick="copyEventLink('${eventId}')">Copy Link</button>
+                <button class="go-button" onclick="openEventLink('${eventId}')">Go</button>
             </div>
 
             <div class="votes-summary">
@@ -275,12 +290,13 @@ function renderEventReport(eventId, eventData) {
                         <th>No</th>
                     </tr>
                     ${dateRanges.map((range, i) => {
+                        const total = totals[i] || { yes: 0, no: 0 };
                         if (range.type === 'dayOfWeek') {
                             return range.days.map(day => `
                                 <tr>
                                     <td>${day}</td>
-                                    <td>${totals[i].yes}</td>
-                                    <td>${totals[i].no}</td>
+                                    <td>${total.yes}</td>
+                                    <td>${total.no}</td>
                                 </tr>
                             `).join('');
                         }
@@ -291,8 +307,8 @@ function renderEventReport(eventId, eventData) {
                         return `
                             <tr>
                                 <td>${displayDate}</td>
-                                <td>${totals[i].yes}</td>
-                                <td>${totals[i].no}</td>
+                                <td>${total.yes}</td>
+                                <td>${total.no}</td>
                             </tr>
                         `;
                     }).join('')}
@@ -329,6 +345,27 @@ function renderEventReport(eventId, eventData) {
         </div>
     `;
 }
+
+// Add this new function
+window.editEventField = async function(eventId, field, currentValue) {
+    let newValue = prompt(`Edit event ${field}:`, currentValue);
+    
+    if (newValue !== null && newValue !== currentValue) {
+        try {
+            const updates = {};
+            updates[field] = newValue;
+            
+            const eventRef = ref(database, `events/${eventId}`);
+            await set(eventRef, {
+                ...(await get(eventRef)).val(),
+                ...updates
+            });
+        } catch (error) {
+            console.error(`Error updating event ${field}:`, error);
+            alert(`Error updating event ${field}`);
+        }
+    }
+};
 
 // Change function name from loadEventReports to loadEvents
 async function loadEvents() {
@@ -399,6 +436,7 @@ async function addPerson(e) {
     }
 }
 
+// Modify the createTribe function to handle both create and edit
 async function createTribe(e) {
     e.preventDefault();
     const tribeName = document.getElementById('tribeName').value.trim();
@@ -411,21 +449,85 @@ async function createTribe(e) {
     }
     
     try {
-        const tribesRef = ref(database, 'tribes');
-        const newTribeRef = push(tribesRef);
-        await set(newTribeRef, {
+        const tribesRef = ref(database, currentEditingTribeId ? 
+            `tribes/${currentEditingTribeId}` : 
+            'tribes');
+
+        const tribeData = {
             name: tribeName,
             members: selectedMembers,
-            created: new Date().toISOString()
-        });
+            updated: new Date().toISOString()
+        };
+
+        // Only add created date for new tribes
+        if (!currentEditingTribeId) {
+            tribeData.created = new Date().toISOString();
+        }
+
+        if (currentEditingTribeId) {
+            await set(tribesRef, tribeData);
+        } else {
+            const newTribeRef = push(tribesRef);
+            await set(newTribeRef, tribeData);
+        }
         
-        document.getElementById('tribeName').value = '';
-        document.querySelectorAll('#memberCheckboxes input').forEach(cb => cb.checked = false);
+        resetTribeForm();
     } catch (error) {
-        console.error("Error creating tribe:", error);
-        alert("Error creating tribe");
+        console.error("Error saving tribe:", error);
+        alert("Error saving tribe");
     }
 }
+
+function resetTribeForm() {
+    document.getElementById('tribeName').value = '';
+    document.querySelectorAll('#memberCheckboxes input').forEach(cb => cb.checked = false);
+    document.getElementById('tribeFormSubmit').textContent = 'Create Tribe';
+    currentEditingTribeId = null;
+}
+
+// Replace the existing editTribe function with this new one
+window.editTribe = async function(tribeId) {
+    const tribeRef = ref(database, `tribes/${tribeId}`);
+    const snapshot = await get(tribeRef);
+    const tribe = snapshot.val();
+    
+    // Set the form to edit mode
+    currentEditingTribeId = tribeId;
+    
+    // Fill in the tribe name
+    document.getElementById('tribeName').value = tribe.name;
+    
+    // Check the appropriate member checkboxes
+    document.querySelectorAll('#memberCheckboxes input').forEach(checkbox => {
+        checkbox.checked = tribe.members.includes(checkbox.value);
+    });
+    
+    // Update submit button text
+    document.getElementById('tribeFormSubmit').textContent = 'Save Changes';
+    
+    // Scroll to the form
+    document.getElementById('tribeForm').scrollIntoView({ behavior: 'smooth' });
+};
+
+// Update the deleteTribe function to reset the form if deleting the currently edited tribe
+window.deleteTribe = async function(tribeId) {
+    if (confirm('Are you sure you want to delete this tribe?')) {
+        try {
+            await remove(ref(database, `tribes/${tribeId}`));
+            if (currentEditingTribeId === tribeId) {
+                resetTribeForm();
+            }
+        } catch (error) {
+            console.error("Error deleting tribe:", error);
+            alert("Error deleting tribe");
+        }
+    }
+};
+
+// Add a cancel edit function
+window.cancelTribeEdit = function() {
+    resetTribeForm();
+};
 
 function renderPeople(people) {
     const peopleList = document.getElementById('peopleList');
@@ -514,31 +616,6 @@ window.deletePerson = async function(personId) {
     }
 };
 
-window.editTribe = async function(tribeId) {
-    const tribeRef = ref(database, `tribes/${tribeId}`);
-    const snapshot = await get(tribeRef);
-    const tribe = snapshot.val();
-    
-    const newName = prompt('Edit tribe name:', tribe.name);
-    if (newName) {
-        await set(tribeRef, {
-            ...tribe,
-            name: newName
-        });
-    }
-};
-
-window.deleteTribe = async function(tribeId) {
-    if (confirm('Are you sure you want to delete this tribe?')) {
-        try {
-            await remove(ref(database, `tribes/${tribeId}`));
-        } catch (error) {
-            console.error("Error deleting tribe:", error);
-            alert("Error deleting tribe");
-        }
-    }
-};
-
 // Add function to populate tribe dropdown
 function populateTribeDropdown(tribes, people) {
     const tribeSelect = document.getElementById('tribeSelect');
@@ -550,6 +627,26 @@ function populateTribeDropdown(tribes, people) {
             return `<option value="${id}">${tribe.name} (${memberCount} members)</option>`;
         }).join('');
 }
+
+// Add this function near the other window functions
+window.openEventLink = function(eventId) {
+    let linkText;
+    if (eventId) {
+        const linkElements = document.querySelectorAll(`.event-link[data-event-id="${eventId}"]`);
+        if (linkElements.length > 0) {
+            linkText = linkElements[0].value;
+        }
+    } else {
+        const shareLinkInput = document.getElementById('shareLinkInput');
+        if (shareLinkInput) {
+            linkText = shareLinkInput.value;
+        }
+    }
+
+    if (linkText) {
+        window.open(linkText, '_blank');
+    }
+};
 
 // Initialize - move this to DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -600,5 +697,11 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTribes(tribes, people);
             populateTribeDropdown(tribes, people); // Add this line
         });
+    });
+
+    // Add reset handler for tribe form
+    document.getElementById('tribeForm')?.addEventListener('reset', (e) => {
+        e.preventDefault();
+        cancelTribeEdit();
     });
 });

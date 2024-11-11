@@ -86,6 +86,7 @@
             <div class="event-link-container">
                 <input class="event-link" type="text" id="shareLinkInput" readonly>
                 <button class="copy-button" onclick="window.copyEventLink()">Copy Link</button>
+                <button class="go-button" onclick="window.openEventLink()">Go</button>
             </div>
         </div>
     </div>
@@ -134,7 +135,10 @@
                             <!-- Member checkboxes will be inserted here -->
                         </div>
                     </div>
-                    <button type="submit">Create Tribe</button>
+                    <div class="form-buttons">
+                        <button type="submit" id="tribeFormSubmit">Create Tribe</button>
+                        <button type="reset" class="cancel-button">Cancel</button>
+                    </div>
                 </form>
                 <div id="tribesList" class="list-container">
                     <!-- Tribes will be listed here -->
