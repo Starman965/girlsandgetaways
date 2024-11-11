@@ -40,14 +40,15 @@
 
     <script type="module">
         import { firebaseConfig } from './firebase-config.js';
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
         import { 
             getDatabase,
             ref, 
             set,
             get,
-        } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+        } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
+        // Initialize Firebase without auth
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
@@ -214,16 +215,19 @@
             await loadEventData();
         };
 
+        // Update loadEventData function
         async function loadEventData() {
             try {
-                console.log('Loading event data...');
-                const eventId = new URLSearchParams(window.location.search).get('event');
-                if (!eventId) {
-                    throw new Error('No event ID provided');
+                const urlParams = new URLSearchParams(window.location.search);
+                const eventId = urlParams.get('event');
+                const userId = urlParams.get('user');
+                
+                if (!eventId || !userId) {
+                    throw new Error('Invalid event link');
                 }
-                console.log('Event ID:', eventId);
 
-                const eventRef = ref(database, `events/${eventId}`);
+                // Load event data from specific user's path
+                const eventRef = ref(database, `users/${userId}/events/${eventId}`);
                 const eventSnap = await get(eventRef);
                 
                 if (!eventSnap.exists()) {
@@ -231,18 +235,17 @@
                 }
 
                 const event = eventSnap.val();
-                console.log('Event data:', event);
-
+                
+                // Update page with event details
                 document.getElementById('eventTitleDisplay').textContent = event.title;
                 document.getElementById('eventDescriptionDisplay').textContent = event.description;
-                
+
+                // Load tribe data from specific user's path
                 if (!event.tribeId) {
                     throw new Error('No tribe assigned to this event');
                 }
-                console.log('Tribe ID:', event.tribeId);
 
-                // Get tribe data
-                const tribeRef = ref(database, `tribes/${event.tribeId}`);
+                const tribeRef = ref(database, `users/${userId}/tribes/${event.tribeId}`);
                 const tribeSnap = await get(tribeRef);
                 
                 if (!tribeSnap.exists()) {
@@ -250,45 +253,31 @@
                 }
 
                 const tribe = tribeSnap.val();
-                console.log('Tribe data:', tribe);
 
-                if (!tribe.members || !tribe.members.length) {
-                    throw new Error('No members in tribe');
-                }
+                // Load people data from specific user's path
+                const peopleRef = ref(database, `users/${userId}/people`);
+                const peopleSnap = await get(peopleRef);
+                const people = peopleSnap.val() || {};
 
-                // Get all member data simultaneously
-                console.log('Fetching member data...');
-                const memberData = {};
-                for (const memberId of tribe.members) {
-                    try {
-                        const memberSnap = await get(ref(database, `people/${memberId}`));
-                        if (memberSnap.exists()) {
-                            memberData[memberId] = memberSnap.val();
-                        }
-                    } catch (e) {
-                        console.error(`Error fetching member ${memberId}:`, e);
-                    }
-                }
-
-                console.log('Member data:', memberData);
-
-                // Populate voter select
+                // 4. Populate voter select with tribe members
                 const voterSelect = document.getElementById('voterName');
                 voterSelect.innerHTML = '<option value="">Choose your name...</option>';
                 
-                Object.entries(memberData)
-                    .sort(([,a], [,b]) => (a.firstName + a.lastName).localeCompare(b.firstName + b.lastName))
-                    .forEach(([, member]) => {
+                tribe.members.forEach(memberId => {
+                    const person = people[memberId];
+                    if (person) {
                         const option = document.createElement('option');
-                        option.value = member.firstName;
-                        option.textContent = `${member.firstName} ${member.lastName}`;
+                        option.value = person.firstName;
+                        option.textContent = `${person.firstName} ${person.lastName}`;
                         voterSelect.appendChild(option);
-                    });
+                    }
+                });
 
                 // Show the name selection
                 document.getElementById('loadingMessage').style.display = 'none';
                 document.getElementById('nameSelectContainer').style.display = 'block';
 
+                // If we have an existing voter, show their votes
                 if (voterName && event.participants && event.participants[voterName]) {
                     currentVotes = event.participants[voterName].votes;
                 }
@@ -300,18 +289,20 @@
             } catch (error) {
                 console.error('Error loading event:', error);
                 document.getElementById('loadingMessage').style.display = 'none';
-                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('errorMessage').textContent = 'Error loading event: ' + error.message;
                 document.getElementById('errorMessage').style.display = 'block';
             }
         }
 
         // Update the submit function to convert -1 to 0 before saving
         window.submitVotes = async function() {
-            const eventId = new URLSearchParams(window.location.search).get('event');
+            const urlParams = new URLSearchParams(window.location.search);
+            const eventId = urlParams.get('event');
+            const userId = urlParams.get('user');
+            
             try {
-                // Convert any remaining pending votes (-1) to no (0) before saving
                 const finalVotes = currentVotes.map(v => v === -1 ? 0 : v);
-                const eventRef = ref(database, `events/${eventId}/participants/${voterName}`);
+                const eventRef = ref(database, `users/${userId}/events/${eventId}/participants/${voterName}`);
                 await set(eventRef, { name: voterName, votes: finalVotes });
                 window.location.href = 'confirmation.html';
             } catch (error) {

@@ -539,3 +539,109 @@
             background: #e9ecef;
             color: #333;
         }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+        }
+
+        .login-form {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-form h2 {
+            margin-bottom: 20px;
+            color: var(--tiffany-blue);
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+
+        .login-form input:focus {
+            outline: none;
+            border-color: var(--tiffany-blue);
+        }
+
+        .login-form .submit-btn {
+            width: 100%;
+            margin: 20px 0 10px;
+        }
+
+        /* Updated Login Styles */
+        .auth-separator {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .auth-separator::before,
+        .auth-separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .auth-separator span {
+            padding: 0 10px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: white;
+            border: 1px solid var(--border-color);
+            color: #333;
+        }
+
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+        }
+
+        .signup-text {
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .link-button {
+            background: none;
+            border: none;
+            color: var(--tiffany-blue);
+            cursor: pointer;
+            padding: 0;
+            font: inherit;
+            text-decoration: underline;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #userName {
+            color: #2C3E50;
+            font-weight: 500;
+        }

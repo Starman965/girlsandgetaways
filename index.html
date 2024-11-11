@@ -8,140 +8,147 @@
     <link rel="stylesheet" href="styles_app.css">
 </head>
 <body>
-    <div class="main-header">
-        <div class="logo-container">
-            <img src="gng.png" alt="Girls and Getaways Logo">
+    <!-- Rename adminContainer to mainContainer since it's now the only container -->
+    <div id="mainContainer" style="display: none;">
+        <div class="main-header">
+            <div class="logo-container">
+                <img src="gng.png" alt="Girls and Getaways Logo">
+            </div>
+            <div class="header-text">
+                <h1>Event Admin System</h1>
+            </div>
+            <div class="user-section">
+                <span id="userName"></span>
+                <button id="logoutBtn" class="submit-btn">Logout</button>
+            </div>
         </div>
-        <div class="header-text">
-            <h1>Event Admin System</h1>
+
+        <div class="tabs">
+            <button class="tab-button active" data-tab="createEvent">Create Event</button>
+            <button class="tab-button" data-tab="events">Events</button>
+            <button class="tab-button" data-tab="tribes">Tribes</button>
         </div>
-    </div>
 
-    <div class="tabs">
-        <button class="tab-button active" data-tab="createEvent">Create Event</button>
-        <button class="tab-button" data-tab="events">Events</button>
-        <button class="tab-button" data-tab="tribes">Tribes</button>
-    </div>
-
-    <div id="createEventView" class="tab-content active">
-        <h2>Create New Event</h2>
-        <form id="eventForm">
-            <input type="text" id="eventTitle" placeholder="Event Title" required>
-            <textarea id="eventDescription" placeholder="Event Description"></textarea>
-            
-            <!-- Add tribe selection before event type -->
-            <div class="form-group">
-                <label for="tribeSelect">Select Tribe</label>
-                <select id="tribeSelect" required>
-                    <option value="">Choose a tribe...</option>
-                </select>
-            </div>
-            
-            <div class="event-type">
-                <h3>Event Poll Type</h3>
-                <label class="radio-label">
-                    <input type="radio" name="eventType" value="specific" checked> Specific Date
-                </label>
-                <label class="radio-label">
-                    <input type="radio" name="eventType" value="range"> Date Range
-                </label>
-                <label class="radio-label">
-                    <input type="radio" name="eventType" value="dayOfWeek"> Day of Week
-                </label>
-            </div>
-
-            <div id="dayOfWeekSelector" style="display: none;" class="day-of-week-container">
-                <label><input type="checkbox" name="daysOfWeek" value="Sunday"> Sunday</label>
-                <label><input type="checkbox" name="daysOfWeek" value="Monday"> Monday</label>
-                <label><input type="checkbox" name="daysOfWeek" value="Tuesday"> Tuesday</label>
-                <label><input type="checkbox" name="daysOfWeek" value="Wednesday"> Wednesday</label>
-                <label><input type="checkbox" name="daysOfWeek" value="Thursday"> Thursday</label>
-                <label><input type="checkbox" name="daysOfWeek" value="Friday"> Friday</label>
-                <label><input type="checkbox" name="daysOfWeek" value="Saturday"> Saturday</label>
-                <button type="button" id="addDaysBtn" onclick="addDaysOfWeek()">Add Days</button>
-            </div>
-
-            <div class="date-input">
-                <div class="date-field-group">
-                    <div class="date-field specific-date">
-                        <label for="dateInput">Date</label>
-                        <input type="date" id="dateInput" placeholder="Date">
-                    </div>
-                    <div class="date-field range-date" style="display: none;">
-                        <label for="endDateInput">End Date</label>
-                        <input type="date" id="endDateInput" placeholder="End Date">
-                    </div>
+        <div id="createEventView" class="tab-content active">
+            <h2>Create New Event</h2>
+            <form id="eventForm">
+                <input type="text" id="eventTitle" placeholder="Event Title" required>
+                <textarea id="eventDescription" placeholder="Event Description"></textarea>
+                
+                <!-- Add tribe selection before event type -->
+                <div class="form-group">
+                    <label for="tribeSelect">Select Tribe</label>
+                    <select id="tribeSelect" required>
+                        <option value="">Choose a tribe...</option>
+                    </select>
                 </div>
-                <button type="button" id="addDateBtn" onclick="addDate()">Add Date</button>
-            </div>
-            
-            <div id="datesList"></div>
-            <div class="submit-container">
-                <button type="submit">Create Event</button>
-            </div>
-        </form>
-        
-        <div id="shareLink" style="display: none;">
-            <h3>Share this Event</h3>
-            <div class="event-link-container">
-                <input class="event-link" type="text" id="shareLinkInput" readonly>
-                <button class="copy-button" onclick="window.copyEventLink()">Copy Link</button>
-                <button class="go-button" onclick="window.openEventLink()">Go</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="eventsView" class="tab-content">
-        <h2>Events</h2>
-        <div id="eventsList"></div>
-    </div>
-
-    <div id="voteView" style="display: none;">
-        <h2 id="eventTitleDisplay"></h2>
-        <p id="eventDescriptionDisplay"></p>
-        
-        <input type="text" id="voterName" placeholder="Your Name">
-        <div id="votingTable"></div>
-        <button onclick="submitVotes()">Submit Votes</button>
-    </div>
-
-    <div id="reportsView" class="tab-content">
-        <h2>Event Reports</h2>
-        <div id="eventReports"></div>
-    </div>
-
-    <div id="tribesView" class="tab-content">
-        <div class="tribes-container">
-            <!-- People Management Section -->
-            <div class="section-container">
-                <h2>People</h2>
-                <form id="personForm">
-                    <input type="text" id="personName" placeholder="Full Name" required>
-                    <button type="submit">Add Person</button>
-                </form>
-                <div id="peopleList" class="list-container">
-                    <!-- People will be listed here -->
+                
+                <div class="event-type">
+                    <h3>Event Poll Type</h3>
+                    <label class="radio-label">
+                        <input type="radio" name="eventType" value="specific" checked> Specific Date
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="eventType" value="range"> Date Range
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="eventType" value="dayOfWeek"> Day of Week
+                    </label>
                 </div>
-            </div>
 
-            <!-- Tribes Management Section -->
-            <div class="section-container">
-                <h2>Tribes</h2>
-                <form id="tribeForm">
-                    <input type="text" id="tribeName" placeholder="Tribe Name" required>
-                    <div class="member-selection">
-                        <h3>Select Members</h3>
-                        <div id="memberCheckboxes" class="checkbox-container">
-                            <!-- Member checkboxes will be inserted here -->
+                <div id="dayOfWeekSelector" style="display: none;" class="day-of-week-container">
+                    <label><input type="checkbox" name="daysOfWeek" value="Sunday"> Sunday</label>
+                    <label><input type="checkbox" name="daysOfWeek" value="Monday"> Monday</label>
+                    <label><input type="checkbox" name="daysOfWeek" value="Tuesday"> Tuesday</label>
+                    <label><input type="checkbox" name="daysOfWeek" value="Wednesday"> Wednesday</label>
+                    <label><input type="checkbox" name="daysOfWeek" value="Thursday"> Thursday</label>
+                    <label><input type="checkbox" name="daysOfWeek" value="Friday"> Friday</label>
+                    <label><input type="checkbox" name="daysOfWeek" value="Saturday"> Saturday</label>
+                    <button type="button" id="addDaysBtn" onclick="addDaysOfWeek()">Add Days</button>
+                </div>
+
+                <div class="date-input">
+                    <div class="date-field-group">
+                        <div class="date-field specific-date">
+                            <label for="dateInput">Date</label>
+                            <input type="date" id="dateInput" placeholder="Date">
+                        </div>
+                        <div class="date-field range-date" style="display: none;">
+                            <label for="endDateInput">End Date</label>
+                            <input type="date" id="endDateInput" placeholder="End Date">
                         </div>
                     </div>
-                    <div class="form-buttons">
-                        <button type="submit" id="tribeFormSubmit">Create Tribe</button>
-                        <button type="reset" class="cancel-button">Cancel</button>
+                    <button type="button" id="addDateBtn" onclick="addDate()">Add Date</button>
+                </div>
+                
+                <div id="datesList"></div>
+                <div class="submit-container">
+                    <button type="submit">Create Event</button>
+                </div>
+            </form>
+            
+            <div id="shareLink" style="display: none;">
+                <h3>Share this Event</h3>
+                <div class="event-link-container">
+                    <input class="event-link" type="text" id="shareLinkInput" readonly>
+                    <button class="copy-button" onclick="window.copyEventLink()">Copy Link</button>
+                    <button class="go-button" onclick="window.openEventLink()">Go</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="eventsView" class="tab-content">
+            <h2>Events</h2>
+            <div id="eventsList"></div>
+        </div>
+
+        <div id="voteView" style="display: none;">
+            <h2 id="eventTitleDisplay"></h2>
+            <p id="eventDescriptionDisplay"></p>
+            
+            <input type="text" id="voterName" placeholder="Your Name">
+            <div id="votingTable"></div>
+            <button onclick="submitVotes()">Submit Votes</button>
+        </div>
+
+        <div id="reportsView" class="tab-content">
+            <h2>Event Reports</h2>
+            <div id="eventReports"></div>
+        </div>
+
+        <div id="tribesView" class="tab-content">
+            <div class="tribes-container">
+                <!-- People Management Section -->
+                <div class="section-container">
+                    <h2>People</h2>
+                    <form id="personForm">
+                        <input type="text" id="personName" placeholder="Full Name" required>
+                        <button type="submit">Add Person</button>
+                    </form>
+                    <div id="peopleList" class="list-container">
+                        <!-- People will be listed here -->
                     </div>
-                </form>
-                <div id="tribesList" class="list-container">
-                    <!-- Tribes will be listed here -->
+                </div>
+
+                <!-- Tribes Management Section -->
+                <div class="section-container">
+                    <h2>Tribes</h2>
+                    <form id="tribeForm">
+                        <input type="text" id="tribeName" placeholder="Tribe Name" required>
+                        <div class="member-selection">
+                            <h3>Select Members</h3>
+                            <div id="memberCheckboxes" class="checkbox-container">
+                                <!-- Member checkboxes will be inserted here -->
+                            </div>
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" id="tribeFormSubmit">Create Tribe</button>
+                            <button type="reset" class="cancel-button">Cancel</button>
+                        </div>
+                    </form>
+                    <div id="tribesList" class="list-container">
+                        <!-- Tribes will be listed here -->
+                    </div>
                 </div>
             </div>
         </div>

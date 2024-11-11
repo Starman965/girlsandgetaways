@@ -1,6 +1,6 @@
 // app.js
 import { firebaseConfig } from './firebase-config.js';
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
 import { 
     getDatabase,
     ref, 
@@ -8,22 +8,88 @@ import {
     push,
     get,
     onValue,
-    remove    // Add this import
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    remove
+} from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+import { 
+    getAuth, 
+    signInWithPopup, 
+    GoogleAuthProvider, 
+    signInWithEmailAndPassword, 
+    createUserWithEmailAndPassword, 
+    onAuthStateChanged, 
+    signOut,
+    updateProfile
+} from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
 
 // Initialize Firebase
 console.log('Initializing Firebase...');
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
+const auth = getAuth(app);
 
 let selectedDates = [];
-
-// Add these variables at the top level after database initialization
 let currentEditingTribeId = null;
+let currentUser = null; // Add this at the top with other global variables
+
+// Add these functions near the top with other globals
+function getUserRef() {
+    if (!currentUser) throw new Error('No user logged in');
+    return `users/${currentUser.uid}`;
+}
+
+// Authentication functions
+async function loginWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+    } catch (error) {
+        console.error("Error logging in with Google:", error);
+        alert("Error logging in with Google");
+    }
+}
+
+async function loginWithEmail() {
+    const email = document.getElementById('emailInput').value;
+    const password = document.getElementById('passwordInput').value;
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+        console.error("Error logging in with email:", error);
+        alert("Error logging in with email");
+    }
+}
+
+async function signupWithEmail() {
+    const email = document.getElementById('emailInput').value;
+    const password = document.getElementById('passwordInput').value;
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Set display name as email username
+        const displayName = email.split('@')[0];
+        await updateProfile(user, {
+            displayName: displayName
+        });
+        
+    } catch (error) {
+        console.error("Error signing up with email:", error);
+        alert("Error signing up with email");
+    }
+}
+
+async function logout() {
+    try {
+        await signOut(auth);
+        window.location.href = 'login.html'; // Add this line to redirect to login.html
+    } catch (error) {
+        console.error("Error logging out:", error);
+        alert("Error logging out");
+    }
+}
 
 // Event handler functions
 function addDate() {
-    const startDate = document.getElementById('dateInput').value;
     const eventType = document.querySelector('input[name="eventType"]:checked').value;
     const endDate = document.getElementById('endDateInput').value;
     
@@ -78,7 +144,8 @@ window.removeDate = function(startDate, endDate) {
 
 // Add this utility function
 function getVoteUrl(eventId) {
-    return `${window.location.origin}/vote.html?event=${eventId}`;
+    if (!currentUser) return '';
+    return `${window.location.origin}/vote.html?event=${eventId}&user=${currentUser.uid}`;
 }
 
 // Replace the existing copyEventLink function
@@ -111,11 +178,42 @@ window.copyEventLink = async function(eventId) {
     }
 };
 
+// After copyEventLink function
+window.openEventLink = function(eventId) {
+    try {
+        let url;
+        if (eventId) {
+            // Called from event report
+            const linkElements = document.querySelectorAll(`.event-link[data-event-id="${eventId}"]`);
+            if (linkElements.length > 0) {
+                url = linkElements[0].value;
+            }
+        } else {
+            // Called from create event view
+            const shareLinkInput = document.getElementById('shareLinkInput');
+            if (shareLinkInput) {
+                url = shareLinkInput.value;
+            }
+        }
+
+        if (!url) {
+            throw new Error('Could not find URL to open');
+        }
+
+        window.open(url, '_blank');
+    } catch (err) {
+        console.error('Failed to open link:', err);
+        alert('Failed to open link');
+    }
+};
+
 // Add delete event function
 window.deleteEvent = async function(eventId) {
+    if (!currentUser) return;
+    
     if (confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
         try {
-            const eventRef = ref(database, `events/${eventId}`);
+            const eventRef = ref(database, `users/${currentUser.uid}/events/${eventId}`);
             await remove(eventRef);
             alert('Event deleted successfully');
         } catch (error) {
@@ -184,8 +282,13 @@ function renderDates() {
     }).join('');
 }
 
+// Update createEvent function
 async function createEvent(e) {
     e.preventDefault();
+    if (!currentUser) {
+        alert('Please login first');
+        return;
+    }
     
     const tribeId = document.getElementById('tribeSelect').value;
     if (!tribeId) {
@@ -213,17 +316,18 @@ async function createEvent(e) {
         }),
         createdBy: 'anonymous',
         participants: {},
+        userId: currentUser.uid,
         created: new Date().toISOString(),
         tribeId: document.getElementById('tribeSelect').value
     };
 
     try {
-        const eventsRef = ref(database, 'events');
+        const eventsRef = ref(database, `${getUserRef()}/events`);
         const newEventRef = push(eventsRef);
         await set(newEventRef, eventData);
         
         // Generate and display the vote URL
-        const voteUrl = `${window.location.origin}/vote.html?event=${newEventRef.key}`;
+        const voteUrl = `${window.location.origin}/vote.html?event=${newEventRef.key}&user=${currentUser.uid}`;
         const shareLinkInput = document.getElementById('shareLinkInput');
         shareLinkInput.value = voteUrl;
         document.getElementById('shareLink').style.display = 'block';
@@ -246,7 +350,7 @@ async function createEvent(e) {
 function renderEventReport(eventId, eventData) {
     const votes = eventData.participants || {};
     const dateRanges = eventData.dates || [];
-    const voteUrl = getVoteUrl(eventId);
+    const voteUrl = `${window.location.origin}/vote.html?event=${eventId}&user=${currentUser.uid}`;
     
     // Calculate totals for each date range
     const totals = dateRanges.map((_, index) => {
@@ -274,7 +378,7 @@ function renderEventReport(eventId, eventData) {
                 </button>
             </div>
 
-            <div class="event-link-container">
+
                 <input class="event-link" type="text" readonly value="${voteUrl}" data-event-id="${eventId}">
                 <button class="copy-button" onclick="copyEventLink('${eventId}')">Copy Link</button>
                 <button class="go-button" onclick="openEventLink('${eventId}')">Go</button>
@@ -321,6 +425,9 @@ function renderEventReport(eventId, eventData) {
                     <tr>
                         <th>Name</th>
                         ${dateRanges.map(range => {
+                            if (range.type === 'dayOfWeek') {
+                                return range.days.map(day => `<th>${day}</th>`).join('');
+                            }
                             const isSpecificDate = range.start === range.end;
                             const displayDate = isSpecificDate ? 
                                 formatDateForDisplay(range.start) :
@@ -348,6 +455,8 @@ function renderEventReport(eventId, eventData) {
 
 // Add this new function
 window.editEventField = async function(eventId, field, currentValue) {
+    if (!currentUser) return;
+    
     let newValue = prompt(`Edit event ${field}:`, currentValue);
     
     if (newValue !== null && newValue !== currentValue) {
@@ -355,7 +464,7 @@ window.editEventField = async function(eventId, field, currentValue) {
             const updates = {};
             updates[field] = newValue;
             
-            const eventRef = ref(database, `events/${eventId}`);
+            const eventRef = ref(database, `users/${currentUser.uid}/events/${eventId}`);
             await set(eventRef, {
                 ...(await get(eventRef)).val(),
                 ...updates
@@ -369,7 +478,9 @@ window.editEventField = async function(eventId, field, currentValue) {
 
 // Change function name from loadEventReports to loadEvents
 async function loadEvents() {
-    const eventsRef = ref(database, 'events');
+    if (!currentUser) return;
+    
+    const eventsRef = ref(database, `${getUserRef()}/events`);
     onValue(eventsRef, (snapshot) => {
         const events = snapshot.val() || {};
         const eventsHtml = Object.entries(events)
@@ -405,9 +516,20 @@ function handleEventTypeChange() {
     }
 }
 
-// Add tribe management functions
+// Add reset handler for tribe form
+document.getElementById('tribeForm')?.addEventListener('reset', (e) => {
+    e.preventDefault();
+    cancelTribeEdit();
+});
+
+// Add back the missing tribe management functions
 async function addPerson(e) {
     e.preventDefault();
+    if (!currentUser) {
+        alert('Please login first');
+        return;
+    }
+    
     const fullName = document.getElementById('personName').value.trim();
     
     if (fullName) {
@@ -420,7 +542,7 @@ async function addPerson(e) {
         }
         
         try {
-            const peopleRef = ref(database, 'people');
+            const peopleRef = ref(database, `${getUserRef()}/people`);
             const newPersonRef = push(peopleRef);
             await set(newPersonRef, {
                 firstName,
@@ -436,99 +558,7 @@ async function addPerson(e) {
     }
 }
 
-// Modify the createTribe function to handle both create and edit
-async function createTribe(e) {
-    e.preventDefault();
-    const tribeName = document.getElementById('tribeName').value.trim();
-    const selectedMembers = Array.from(document.querySelectorAll('#memberCheckboxes input:checked'))
-        .map(checkbox => checkbox.value);
-    
-    if (selectedMembers.length === 0) {
-        alert('Please select at least one member');
-        return;
-    }
-    
-    try {
-        const tribesRef = ref(database, currentEditingTribeId ? 
-            `tribes/${currentEditingTribeId}` : 
-            'tribes');
-
-        const tribeData = {
-            name: tribeName,
-            members: selectedMembers,
-            updated: new Date().toISOString()
-        };
-
-        // Only add created date for new tribes
-        if (!currentEditingTribeId) {
-            tribeData.created = new Date().toISOString();
-        }
-
-        if (currentEditingTribeId) {
-            await set(tribesRef, tribeData);
-        } else {
-            const newTribeRef = push(tribesRef);
-            await set(newTribeRef, tribeData);
-        }
-        
-        resetTribeForm();
-    } catch (error) {
-        console.error("Error saving tribe:", error);
-        alert("Error saving tribe");
-    }
-}
-
-function resetTribeForm() {
-    document.getElementById('tribeName').value = '';
-    document.querySelectorAll('#memberCheckboxes input').forEach(cb => cb.checked = false);
-    document.getElementById('tribeFormSubmit').textContent = 'Create Tribe';
-    currentEditingTribeId = null;
-}
-
-// Replace the existing editTribe function with this new one
-window.editTribe = async function(tribeId) {
-    const tribeRef = ref(database, `tribes/${tribeId}`);
-    const snapshot = await get(tribeRef);
-    const tribe = snapshot.val();
-    
-    // Set the form to edit mode
-    currentEditingTribeId = tribeId;
-    
-    // Fill in the tribe name
-    document.getElementById('tribeName').value = tribe.name;
-    
-    // Check the appropriate member checkboxes
-    document.querySelectorAll('#memberCheckboxes input').forEach(checkbox => {
-        checkbox.checked = tribe.members.includes(checkbox.value);
-    });
-    
-    // Update submit button text
-    document.getElementById('tribeFormSubmit').textContent = 'Save Changes';
-    
-    // Scroll to the form
-    document.getElementById('tribeForm').scrollIntoView({ behavior: 'smooth' });
-};
-
-// Update the deleteTribe function to reset the form if deleting the currently edited tribe
-window.deleteTribe = async function(tribeId) {
-    if (confirm('Are you sure you want to delete this tribe?')) {
-        try {
-            await remove(ref(database, `tribes/${tribeId}`));
-            if (currentEditingTribeId === tribeId) {
-                resetTribeForm();
-            }
-        } catch (error) {
-            console.error("Error deleting tribe:", error);
-            alert("Error deleting tribe");
-        }
-    }
-};
-
-// Add a cancel edit function
-window.cancelTribeEdit = function() {
-    resetTribeForm();
-};
-
+// Add back tribe management functions
 function renderPeople(people) {
     const peopleList = document.getElementById('peopleList');
     const memberCheckboxes = document.getElementById('memberCheckboxes');
@@ -559,116 +589,163 @@ function renderTribes(tribes, people) {
     
     tribesList.innerHTML = Object.entries(tribes || {}).map(([id, tribe]) => {
         const memberNames = tribe.members
-            .map(memberId => {
-                const person = people[memberId];
-                return person ? `${person.firstName} ${person.lastName}` : '';
-            })
-            .filter(name => name)
+            .map(memberId => people[memberId])
+            .filter(Boolean)
+            .map(person => `${person.firstName} ${person.lastName}`)
             .join(', ');
             
         return `
             <div class="tribe-item">
                 <div>
                     <strong>${tribe.name}</strong>
-                    <div class="tribe-members">${memberNames}</div>
+                    <p>${memberNames}</p>
                 </div>
                 <div class="actions">
-                    <button onclick="window.editTribe('${id}')">Edit</button>
-                    <button onclick="window.deleteTribe('${id}')" class="delete-btn">Delete</button>
+                    <button onclick="editTribe('${id}')">Edit</button>
+                    <button onclick="deleteTribe('${id}')" class="delete-btn">Delete</button>
                 </div>
             </div>
         `;
     }).join('');
 }
 
-// Add these to window object
-window.editPerson = async function(personId) {
-    const personRef = ref(database, `people/${personId}`);
-    const snapshot = await get(personRef);
-    const person = snapshot.val();
-    
-    const fullName = prompt('Edit name (First Last):', `${person.firstName} ${person.lastName}`);
-    
-    if (fullName) {
-        const [firstName, ...lastNameParts] = fullName.trim().split(' ');
-        const lastName = lastNameParts.join(' ');
+
+
+// Add tribe management functions
+async function createTribe(e) {
+    e.preventDefault();
+    if (!currentUser) {
+        alert('Please login first');
+        return;
+    }
+
+    const tribeName = document.getElementById('tribeName').value.trim();
+    const selectedMembers = Array.from(document.querySelectorAll('#memberCheckboxes input:checked')).map(cb => cb.value);
+
+    if (!tribeName) {
+        alert('Please enter a tribe name');
+        return;
+    }
+    if (selectedMembers.length === 0) {
+        alert('Please select at least one member');
+        return;
+    }
+
+    try {
+        const tribesRef = ref(database, `${getUserRef()}/tribes`);
+        const newTribeRef = push(tribesRef);
+        await set(newTribeRef, {
+            name: tribeName,
+            members: selectedMembers,
+            created: new Date().toISOString(),
+            updated: new Date().toISOString()
+        });
+
+        // Reset form
+        document.getElementById('tribeName').value = '';
+        document.querySelectorAll('#memberCheckboxes input').forEach(cb => cb.checked = false);
         
-        if (firstName && lastName) {
-            await set(personRef, {
-                ...person,
-                firstName,
-                lastName
-            });
-        } else {
-            alert('Please enter both first and last name');
+        if (currentEditingTribeId) {
+            currentEditingTribeId = null;
+            document.getElementById('tribeFormSubmit').textContent = 'Create Tribe';
         }
+    } catch (error) {
+        console.error("Error creating tribe:", error);
+        alert("Error creating tribe");
+    }
+}
+
+// Add these window functions for tribe management
+window.editTribe = async function(tribeId) {
+    currentEditingTribeId = tribeId;
+    const tribeRef = ref(database, `${getUserRef()}/tribes/${tribeId}`);
+    const tribeSnap = await get(tribeRef);
+    const tribe = tribeSnap.val();
+
+    if (tribe) {
+        document.getElementById('tribeName').value = tribe.name;
+        document.querySelectorAll('#memberCheckboxes input').forEach(cb => {
+            cb.checked = tribe.members.includes(cb.value);
+        });
+        document.getElementById('tribeFormSubmit').textContent = 'Update Tribe';
     }
 };
 
-window.deletePerson = async function(personId) {
-    if (confirm('Are you sure you want to delete this person?')) {
+window.deleteTribe = async function(tribeId) {
+    if (!currentUser) return;
+    
+    if (confirm('Are you sure you want to delete this tribe? This action cannot be undone.')) {
         try {
-            await remove(ref(database, `people/${personId}`));
+            const tribeRef = ref(database, `${getUserRef()}/tribes/${tribeId}`);
+            await remove(tribeRef);
+            alert('Tribe deleted successfully');
         } catch (error) {
-            console.error("Error deleting person:", error);
-            alert("Error deleting person");
+            console.error("Error deleting tribe:", error);
+            alert("Error deleting tribe. Please try again.");
         }
     }
 };
 
-// Add function to populate tribe dropdown
+
 function populateTribeDropdown(tribes, people) {
     const tribeSelect = document.getElementById('tribeSelect');
     if (!tribeSelect) return;
-    
+
     tribeSelect.innerHTML = '<option value="">Choose a tribe...</option>' +
         Object.entries(tribes || {}).map(([id, tribe]) => {
-            const memberCount = tribe.members.length;
-            return `<option value="${id}">${tribe.name} (${memberCount} members)</option>`;
+            const memberNames = tribe.members
+                .map(memberId => people[memberId])
+                .filter(Boolean)
+                .map(person => `${person.firstName}`)
+                .join(', ');
+            return `<option value="${id}">${tribe.name} (${memberNames})</option>`;
         }).join('');
 }
 
-// Add this function near the other window functions
-window.openEventLink = function(eventId) {
-    let linkText;
-    if (eventId) {
-        const linkElements = document.querySelectorAll(`.event-link[data-event-id="${eventId}"]`);
-        if (linkElements.length > 0) {
-            linkText = linkElements[0].value;
-        }
-    } else {
-        const shareLinkInput = document.getElementById('shareLinkInput');
-        if (shareLinkInput) {
-            linkText = shareLinkInput.value;
-        }
-    }
+function cancelTribeEdit() {
+    currentEditingTribeId = null;
+    document.getElementById('tribeName').value = '';
+    document.querySelectorAll('#memberCheckboxes input').forEach(cb => cb.checked = false);
+    document.getElementById('tribeFormSubmit').textContent = 'Create Tribe';
+}
 
-    if (linkText) {
-        window.open(linkText, '_blank');
-    }
-};
-
-// Initialize - move this to DOMContentLoaded
+// Update the DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('eventForm').addEventListener('submit', createEvent);
-    document.getElementById('dateInput').addEventListener('change', (e) => {
-        // Only auto-add date if it's a specific date event type
-        const eventType = document.querySelector('input[name="eventType"]:checked').value;
+    // Add authentication event listeners only if elements exist
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const emailLoginBtn = document.getElementById('emailLoginBtn');
+    const emailLoginSubmitBtn = document.getElementById('emailLoginSubmitBtn');
+    const emailSignupBtn = document.getElementById('emailSignupBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    googleLoginBtn?.addEventListener('click', loginWithGoogle);
+    emailLoginBtn?.addEventListener('click', () => {
+        document.getElementById('emailLoginForm').style.display = 'block';
+    });
+    emailLoginSubmitBtn?.addEventListener('click', loginWithEmail);
+    emailSignupBtn?.addEventListener('click', signupWithEmail);
+    logoutBtn?.addEventListener('click', logout);
+
+    // Add form listeners with optional chaining
+    document.getElementById('eventForm')?.addEventListener('submit', createEvent);
+    document.getElementById('personForm')?.addEventListener('submit', addPerson);
+    document.getElementById('tribeForm')?.addEventListener('submit', createTribe);
+    
+    // Add date input listener if element exists
+    document.getElementById('dateInput')?.addEventListener('change', (e) => {
+        const eventType = document.querySelector('input[name="eventType"]:checked')?.value;
         if (e.target.value && eventType === 'specific') {
             addDate();
         }
     });
-    loadEvents(); // Changed from loadEventReports()
     
-    // Add event listeners for radio buttons
-    document.querySelectorAll('input[name="eventType"]').forEach(radio => {
+    // Add event type radio listeners if they exist
+    document.querySelectorAll('input[name="eventType"]')?.forEach(radio => {
         radio.addEventListener('change', handleEventTypeChange);
     });
     
-    handleEventTypeChange(); // Initialize the view
-    
-    // Add tab switching listeners
-    document.querySelectorAll('.tab-button').forEach(button => {
+    // Add tab switching listeners if they exist
+    document.querySelectorAll('.tab-button')?.forEach(button => {
         button.addEventListener('click', () => {
             document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -676,32 +753,46 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(button.dataset.tab + 'View').classList.add('active');
         });
     });
-    
-    // Add tribe management form listeners
-    document.getElementById('personForm')?.addEventListener('submit', addPerson);
-    document.getElementById('tribeForm')?.addEventListener('submit', createTribe);
-    
-    // Set up real-time listeners for people and tribes
-    const peopleRef = ref(database, 'people');
-    const tribesRef = ref(database, 'tribes');
-    
-    onValue(peopleRef, (snapshot) => {
-        const people = snapshot.val() || {};
-        renderPeople(people);
-    });
-    
-    onValue(tribesRef, (snapshot) => {
-        get(peopleRef).then(peopleSnap => {
-            const tribes = snapshot.val() || {};
-            const people = peopleSnap.val() || {};
-            renderTribes(tribes, people);
-            populateTribeDropdown(tribes, people); // Add this line
-        });
-    });
 
-    // Add reset handler for tribe form
-    document.getElementById('tribeForm')?.addEventListener('reset', (e) => {
-        e.preventDefault();
-        cancelTribeEdit();
+    // Initialize view if needed
+    if (document.querySelector('input[name="eventType"]')) {
+        handleEventTypeChange();
+    }
+
+    // Initialize authentication state
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('mainContainer').style.display = 'block';
+            
+            // Display user name
+            const userNameElement = document.getElementById('userName');
+            if (userNameElement) {
+                userNameElement.textContent = user.displayName || user.email;
+            }
+            
+            loadEvents();
+            
+            // Set up real-time listeners for people and tribes
+            const peopleRef = ref(database, `${getUserRef()}/people`);
+            const tribesRef = ref(database, `${getUserRef()}/tribes`);
+            
+            onValue(peopleRef, (snapshot) => {
+                const people = snapshot.val() || {};
+                renderPeople(people);
+            });
+            
+            onValue(tribesRef, (snapshot) => {
+                get(peopleRef).then(peopleSnap => {
+                    const tribes = snapshot.val() || {};
+                    const people = peopleSnap.val() || {};
+                    renderTribes(tribes, people);
+                    populateTribeDropdown(tribes, people);
+                });
+            });
+        } else {
+            currentUser = null;
+            window.location.href = 'login.html';
+        }
     });
 });
