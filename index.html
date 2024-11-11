@@ -239,6 +239,59 @@
                 flex-direction: column;
             }
         }
+
+        .date-input {
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .date-field {
+            flex: 1;
+        }
+
+        .date-field label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2C3E50;
+            font-weight: 500;
+        }
+
+        .submit-container {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        @media (max-width: 768px) {
+            .date-input {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .date-field {
+                width: 100%;
+            }
+        }
+
+        .event-type {
+            margin: 20px 0;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .radio-label {
+            margin-right: 20px;
+            cursor: pointer;
+        }
+
+        .radio-label input[type="radio"] {
+            margin-right: 5px;
+        }
+
+        .range-date {
+            transition: all 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -257,14 +310,31 @@
             <input type="text" id="eventTitle" placeholder="Event Title" required>
             <textarea id="eventDescription" placeholder="Event Description"></textarea>
             
+            <div class="event-type">
+                <label class="radio-label">
+                    <input type="radio" name="eventType" value="specific" checked> Specific Date
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="eventType" value="range"> Date Range
+                </label>
+            </div>
+
             <div class="date-input">
-                <input type="date" id="dateInput" placeholder="Start Date">
-                <input type="date" id="endDateInput" placeholder="End Date">
-                <button type="button" id="addDateBtn" onclick="addDate()">Add Date Range</button>
+                <div class="date-field specific-date">
+                    <label for="dateInput">Date</label>
+                    <input type="date" id="dateInput" placeholder="Date">
+                </div>
+                <div class="date-field range-date" style="display: none;">
+                    <label for="endDateInput">End Date</label>
+                    <input type="date" id="endDateInput" placeholder="End Date">
+                </div>
+                <button type="button" id="addDateBtn" onclick="addDate()">Add Date</button>
             </div>
             
             <div id="datesList"></div>
-            <button type="submit">Create Event</button>
+            <div class="submit-container">
+                <button type="submit">Create Event</button>
+            </div>
         </form>
         
         <div id="shareLink" style="display: none;">

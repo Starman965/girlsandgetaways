@@ -21,20 +21,35 @@ let selectedDates = [];
 // Event handler functions
 function addDate() {
     const startDate = document.getElementById('dateInput').value;
+    const eventType = document.querySelector('input[name="eventType"]:checked').value;
     const endDate = document.getElementById('endDateInput').value;
     
-    if (startDate && endDate) {
-        if (new Date(endDate) < new Date(startDate)) {
-            alert('End date must be after start date');
-            return;
+    if (startDate) {
+        const startDateTime = new Date(startDate + 'T00:00:00');
+        let dateRange;
+
+        if (eventType === 'specific') {
+            dateRange = {
+                start: startDate,
+                end: startDate  // Same date for specific dates
+            };
+        } else {
+            if (!endDate) {
+                alert('Please select an end date for date range');
+                return;
+            }
+            const endDateTime = new Date(endDate + 'T00:00:00');
+            if (endDateTime < startDateTime) {
+                alert('End date must be after start date');
+                return;
+            }
+            dateRange = {
+                start: startDate,
+                end: endDate
+            };
         }
         
-        const dateRange = {
-            start: startDate,
-            end: endDate
-        };
-        
-        const rangeString = `${startDate}|${endDate}`;
+        const rangeString = `${dateRange.start}|${dateRange.end}`;
         if (!selectedDates.some(d => `${d.start}|${d.end}` === rangeString)) {
             selectedDates.push(dateRange);
             renderDates();
@@ -93,23 +108,32 @@ window.deleteEvent = async function(eventId) {
     }
 };
 
+// Update formatDateForDisplay to preserve local date
 function formatDateForDisplay(dateStr) {
-    const date = new Date(dateStr);
+    const date = new Date(dateStr + 'T00:00:00');
     return date.toLocaleDateString('en-US', {
         month: '2-digit',
         day: '2-digit',
-        year: '2-digit'
+        year: '2-digit',
+        timeZone: 'UTC'  // Use UTC to prevent timezone conversion
     });
 }
 
 function renderDates() {
     const datesList = document.getElementById('datesList');
-    datesList.innerHTML = selectedDates.map(dateRange => `
-        <div class="date-tag">
-            ${formatDateForDisplay(dateRange.start)} to ${formatDateForDisplay(dateRange.end)}
-            <button onclick="removeDate('${dateRange.start}', '${dateRange.end}')">&times;</button>
-        </div>
-    `).join('');
+    datesList.innerHTML = selectedDates.map(dateRange => {
+        const isSpecificDate = dateRange.start === dateRange.end;
+        const displayText = isSpecificDate ? 
+            formatDateForDisplay(dateRange.start) :
+            `${formatDateForDisplay(dateRange.start)} to ${formatDateForDisplay(dateRange.end)}`;
+            
+        return `
+            <div class="date-tag">
+                ${displayText}
+                <button onclick="removeDate('${dateRange.start}', '${dateRange.end}')">&times;</button>
+            </div>
+        `;
+    }).join('');
 }
 
 async function createEvent(e) {
@@ -175,17 +199,23 @@ function renderEventReport(eventId, eventData) {
                 <h4>Summary</h4>
                 <table class="report-table">
                     <tr>
-                        <th>Date Range</th>
+                        <th>${dateRanges[0]?.start === dateRanges[0]?.end ? 'Date' : 'Date Range'}</th>
                         <th>Yes</th>
                         <th>No</th>
                     </tr>
-                    ${dateRanges.map((range, i) => `
-                        <tr>
-                            <td>${range.displayRange}</td>
-                            <td>${totals[i].yes}</td>
-                            <td>${totals[i].no}</td>
-                        </tr>
-                    `).join('')}
+                    ${dateRanges.map((range, i) => {
+                        const isSpecificDate = range.start === range.end;
+                        const displayDate = isSpecificDate ? 
+                            formatDateForDisplay(range.start) :
+                            `${formatDateForDisplay(range.start)} to ${formatDateForDisplay(range.end)}`;
+                        return `
+                            <tr>
+                                <td>${displayDate}</td>
+                                <td>${totals[i].yes}</td>
+                                <td>${totals[i].no}</td>
+                            </tr>
+                        `;
+                    }).join('')}
                 </table>
             </div>
 
@@ -194,7 +224,13 @@ function renderEventReport(eventId, eventData) {
                 <table class="report-table">
                     <tr>
                         <th>Name</th>
-                        ${dateRanges.map(range => `<th>${range.displayRange}</th>`).join('')}
+                        ${dateRanges.map(range => {
+                            const isSpecificDate = range.start === range.end;
+                            const displayDate = isSpecificDate ? 
+                                formatDateForDisplay(range.start) :
+                                `${formatDateForDisplay(range.start)} to ${formatDateForDisplay(range.end)}`;
+                            return `<th>${displayDate}</th>`;
+                        }).join('')}
                     </tr>
                     ${Object.entries(votes).map(([name, data]) => `
                         <tr>
@@ -225,13 +261,37 @@ async function loadEventReports() {
     });
 }
 
+// Add this function to handle radio button changes
+function handleEventTypeChange() {
+    const eventType = document.querySelector('input[name="eventType"]:checked').value;
+    const endDateField = document.querySelector('.range-date');
+    const addButton = document.getElementById('addDateBtn');
+    
+    if (eventType === 'specific') {
+        endDateField.style.display = 'none';
+        addButton.textContent = 'Add Date';
+    } else {
+        endDateField.style.display = 'block';
+        addButton.textContent = 'Add Date Range';
+    }
+}
+
 // Initialize - move this to DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('eventForm').addEventListener('submit', createEvent);
     document.getElementById('dateInput').addEventListener('change', (e) => {
-        if (e.target.value) {
+        // Only auto-add date if it's a specific date event type
+        const eventType = document.querySelector('input[name="eventType"]:checked').value;
+        if (e.target.value && eventType === 'specific') {
             addDate();
         }
     });
     loadEventReports();
+    
+    // Add event listeners for radio buttons
+    document.querySelectorAll('input[name="eventType"]').forEach(radio => {
+        radio.addEventListener('change', handleEventTypeChange);
+    });
+    
+    handleEventTypeChange(); // Initialize the view
 });
