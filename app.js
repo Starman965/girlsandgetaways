@@ -89,40 +89,57 @@ async function logout() {
 }
 
 // Event handler functions
+// Update addDate function
 function addDate() {
     const eventType = document.querySelector('input[name="eventType"]:checked').value;
-    const endDate = document.getElementById('endDateInput').value;
+    let startDate, endDate;
     
-    if (startDate) {
-        const startDateTime = new Date(startDate + 'T00:00:00');
-        let dateRange;
+    if (eventType === 'specific') {
+        startDate = document.getElementById('specificDateInput').value;
+        endDate = startDate;
+    } else if (eventType === 'range') {
+        startDate = document.getElementById('startDateInput').value;
+        endDate = document.getElementById('endDateInput').value;
+    }
+    
+    if (!startDate) {
+        alert('Please select a start date');
+        return;
+    }
 
-        if (eventType === 'specific') {
-            dateRange = {
-                start: startDate,
-                end: startDate  // Same date for specific dates
-            };
-        } else {
-            if (!endDate) {
-                alert('Please select an end date for date range');
-                return;
-            }
-            const endDateTime = new Date(endDate + 'T00:00:00');
-            if (endDateTime < startDateTime) {
-                alert('End date must be after start date');
-                return;
-            }
-            dateRange = {
-                start: startDate,
-                end: endDate
-            };
+    const startDateTime = new Date(startDate + 'T00:00:00');
+    let dateRange;
+
+    if (eventType === 'specific') {
+        dateRange = {
+            start: startDate,
+            end: startDate
+        };
+    } else if (eventType === 'range') {
+        if (!endDate) {
+            alert('Please select an end date');
+            return;
         }
-        
-        const rangeString = `${dateRange.start}|${dateRange.end}`;
-        if (!selectedDates.some(d => `${d.start}|${d.end}` === rangeString)) {
-            selectedDates.push(dateRange);
-            renderDates();
-            document.getElementById('dateInput').value = '';
+        const endDateTime = new Date(endDate + 'T00:00:00');
+        if (endDateTime < startDateTime) {
+            alert('End date must be after start date');
+            return;
+        }
+        dateRange = {
+            start: startDate,
+            end: endDate
+        };
+    }
+    
+    const rangeString = `${dateRange.start}|${dateRange.end}`;
+    if (!selectedDates.some(d => `${d.start}|${d.end}` === rangeString)) {
+        selectedDates.push(dateRange);
+        renderDates();
+        // Clear inputs
+        if (eventType === 'specific') {
+            document.getElementById('specificDateInput').value = '';
+        } else {
+            document.getElementById('startDateInput').value = '';
             document.getElementById('endDateInput').value = '';
         }
     }
@@ -131,8 +148,47 @@ function addDate() {
 // Attach functions to window object
 window.addDate = addDate;
 window.removeDate = function(startDate, endDate) {
-    selectedDates = selectedDates.filter(d => !(d.start === startDate && d.end === endDate));
+    if (startDate === 'dayOfWeek') {
+        selectedDates = selectedDates.filter(d => d.type !== 'dayOfWeek');
+    } else {
+        selectedDates = selectedDates.filter(d => !(d.start === startDate && d.end === endDate));
+    }
     renderDates();
+};
+window.deletePerson = async function(personId) {
+    if (!currentUser) return;
+    
+    if (confirm('Are you sure you want to delete this person? This will also remove them from any tribes.')) {
+        try {
+            // First, get all tribes to update their member lists
+            const tribesRef = ref(database, `${getUserRef()}/tribes`);
+            const tribesSnap = await get(tribesRef);
+            const tribes = tribesSnap.val() || {};
+
+            // Remove the person from all tribes
+            const tribeUpdates = {};
+            Object.entries(tribes).forEach(([tribeId, tribe]) => {
+                if (tribe.members?.includes(personId)) {
+                    tribeUpdates[`${getUserRef()}/tribes/${tribeId}/members`] = 
+                        tribe.members.filter(id => id !== personId);
+                }
+            });
+
+            // Delete the person
+            const personRef = ref(database, `${getUserRef()}/people/${personId}`);
+            await remove(personRef);
+
+            // Update all affected tribes
+            for (const [path, value] of Object.entries(tribeUpdates)) {
+                await set(ref(database, path), value);
+            }
+
+            alert('Person deleted successfully');
+        } catch (error) {
+            console.error("Error deleting person:", error);
+            alert("Error deleting person. Please try again.");
+        }
+    }
 };
 
 // Remove this old function
@@ -377,13 +433,11 @@ function renderEventReport(eventId, eventData) {
                     ✏️
                 </button>
             </div>
-
-
+            <div class="event-link-container">
                 <input class="event-link" type="text" readonly value="${voteUrl}" data-event-id="${eventId}">
                 <button class="copy-button" onclick="copyEventLink('${eventId}')">Copy Link</button>
                 <button class="go-button" onclick="openEventLink('${eventId}')">Go</button>
             </div>
-
             <div class="votes-summary">
                 <h4>Summary</h4>
                 <table class="report-table">
@@ -418,7 +472,6 @@ function renderEventReport(eventId, eventData) {
                     }).join('')}
                 </table>
             </div>
-
             <div class="individual-votes">
                 <h4>Individual Responses</h4>
                 <table class="report-table">
@@ -492,22 +545,30 @@ async function loadEvents() {
 
 // Add this function to handle radio button changes
 function handleEventTypeChange() {
-    const eventType = document.querySelector('input[name="eventType"]:checked').value;
+    const eventType = document.querySelector('input[name="eventType"]:checked')?.value;
     const endDateField = document.querySelector('.range-date');
     const dateInput = document.querySelector('.date-input');
+    const addDateBtn = document.getElementById('addDateBtn');
     const dayOfWeekSelector = document.getElementById('dayOfWeekSelector');
     
+    if (!eventType || !endDateField || !dateInput || !addDateBtn || !dayOfWeekSelector) {
+        return;
+    }
+
     endDateField.style.display = 'none';
     dateInput.style.display = 'block';
     dayOfWeekSelector.style.display = 'none';
     
     switch(eventType) {
         case 'specific':
-            document.getElementById('addDateBtn').textContent = 'Add Date';
+            addDateBtn.style.display = 'none';
+            document.getElementById('dateInput')?.classList.add('specific-date-input');
             break;
         case 'range':
             endDateField.style.display = 'block';
-            document.getElementById('addDateBtn').textContent = 'Add Date Range';
+            addDateBtn.style.display = 'block';
+            addDateBtn.textContent = 'Add Date Range';
+            document.getElementById('dateInput')?.classList.remove('specific-date-input');
             break;
         case 'dayOfWeek':
             dateInput.style.display = 'none';
@@ -557,6 +618,43 @@ async function addPerson(e) {
         }
     }
 }
+
+// Add person deletion function
+window.deletePerson = async function(personId) {
+    if (!currentUser) return;
+    
+    if (confirm('Are you sure you want to delete this person? This will also remove them from any tribes.')) {
+        try {
+            // First, get all tribes to update their member lists
+            const tribesRef = ref(database, `${getUserRef()}/tribes`);
+            const tribesSnap = await get(tribesRef);
+            const tribes = tribesSnap.val() || {};
+
+            // Remove the person from all tribes
+            const tribeUpdates = {};
+            Object.entries(tribes).forEach(([tribeId, tribe]) => {
+                if (tribe.members?.includes(personId)) {
+                    tribeUpdates[`${getUserRef()}/tribes/${tribeId}/members`] = 
+                        tribe.members.filter(id => id !== personId);
+                }
+            });
+
+            // Delete the person
+            const personRef = ref(database, `${getUserRef()}/people/${personId}`);
+            await remove(personRef);
+
+            // Update all affected tribes
+            for (const [path, value] of Object.entries(tribeUpdates)) {
+                await set(ref(database, path), value);
+            }
+
+            alert('Person deleted successfully');
+        } catch (error) {
+            console.error("Error deleting person:", error);
+            alert("Error deleting person. Please try again.");
+        }
+    }
+};
 
 // Add back tribe management functions
 function renderPeople(people) {
@@ -708,6 +806,34 @@ function cancelTribeEdit() {
     document.querySelectorAll('#memberCheckboxes input').forEach(cb => cb.checked = false);
     document.getElementById('tribeFormSubmit').textContent = 'Create Tribe';
 }
+
+// Add this function to handle editing a person's name
+window.editPerson = async function(personId) {
+    if (!currentUser) return;
+
+    const personRef = ref(database, `${getUserRef()}/people/${personId}`);
+    const personSnap = await get(personRef);
+    const person = personSnap.val();
+
+    if (person) {
+        const newFirstName = prompt("Edit First Name:", person.firstName);
+        const newLastName = prompt("Edit Last Name:", person.lastName);
+
+        if (newFirstName !== null && newLastName !== null) {
+            try {
+                await set(personRef, {
+                    ...person,
+                    firstName: newFirstName,
+                    lastName: newLastName
+                });
+                alert('Person updated successfully');
+            } catch (error) {
+                console.error("Error updating person:", error);
+                alert("Error updating person. Please try again.");
+            }
+        }
+    }
+};
 
 // Update the DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', () => {

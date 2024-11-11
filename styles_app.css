@@ -645,3 +645,54 @@
             color: #2C3E50;
             font-weight: 500;
         }
+
+        /* Add these new styles */
+        .specific-date-input {
+            width: 150px;
+        }
+
+        .date-field-group {
+            margin-bottom: 15px;
+        }
+
+        .range-inputs {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .range-inputs > div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .range-inputs input {
+            width: 150px;
+        }
+
+        .range-inputs button {
+            height: 35px;
+            margin-left: 10px;
+        }
+
+        .day-of-week-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .day-checkboxes {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .day-checkboxes label {
+            white-space: nowrap;
+        }
+
+        #addDaysBtn {
+            height: 35px;
+            white-space: nowrap;
+        }
