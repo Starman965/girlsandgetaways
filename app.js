@@ -412,13 +412,42 @@ function renderEventReport(eventId, eventData) {
     const dateRanges = eventData.dates || [];
     const voteUrl = `${window.location.origin}/vote.html?event=${eventId}&user=${currentUser.uid}`;
     
-    // Calculate totals for each date range
-    const totals = dateRanges.map((_, index) => {
-        const yesVotes = Object.values(votes).filter(p => p.votes?.[index] === 2).length;
-        const noVotes = Object.values(votes).filter(p => p.votes?.[index] === 0).length;
-        return { yes: yesVotes, no: noVotes };
-    });
-    
+    // Calculate totals for each individual option (date or day)
+    let totals = [];
+    if (dateRanges[0]?.type === 'dayOfWeek') {
+        // For day of week events, spread the days into individual options
+        dateRanges.forEach(range => {
+            range.days.forEach((day, dayIndex) => {
+                const dayTotal = Object.values(votes).reduce((acc, participant) => {
+                    if (participant.votes && participant.votes[dayIndex] !== undefined) {
+                        if (participant.votes[dayIndex] === 2) {
+                            acc.yes++;
+                        } else if (participant.votes[dayIndex] === 0) {
+                            acc.no++;
+                        }
+                    }
+                    return acc;
+                }, { yes: 0, no: 0 });
+                totals.push(dayTotal);
+            });
+        });
+    } else {
+        // For regular date events, calculate totals as before
+        totals = dateRanges.map((_, index) => {
+            return Object.values(votes).reduce((acc, participant) => {
+                if (participant.votes && participant.votes[index] !== undefined) {
+                    if (participant.votes[index] === 2) {
+                        acc.yes++;
+                    } else if (participant.votes[index] === 0) {
+                        acc.no++;
+                    }
+                }
+                return acc;
+            }, { yes: 0, no: 0 });
+        });
+    }
+
+    // Rest of the rendering code remains the same but uses the corrected totals
     return `
         <div class="event-report">
             <div class="event-header">
@@ -452,25 +481,22 @@ function renderEventReport(eventId, eventData) {
                         <th>No</th>
                     </tr>
                     ${dateRanges.map((range, i) => {
-                        const total = totals[i] || { yes: 0, no: 0 };
                         if (range.type === 'dayOfWeek') {
-                            return range.days.map(day => `
+                            return range.days.map((day, dayIndex) => `
                                 <tr>
                                     <td>${day}</td>
-                                    <td>${total.yes}</td>
-                                    <td>${total.no}</td>
+                                    <td>${totals[dayIndex].yes}</td>
+                                    <td>${totals[dayIndex].no}</td>
                                 </tr>
                             `).join('');
                         }
-                        const isSpecificDate = range.start === range.end;
-                        const displayDate = isSpecificDate ? 
-                            formatDateForDisplay(range.start) :
-                            `${formatDateForDisplay(range.start)} to ${formatDateForDisplay(range.end)}`;
                         return `
                             <tr>
-                                <td>${displayDate}</td>
-                                <td>${total.yes}</td>
-                                <td>${total.no}</td>
+                                <td>${range.start === range.end ? 
+                                    formatDateForDisplay(range.start) :
+                                    `${formatDateForDisplay(range.start)} to ${formatDateForDisplay(range.end)}`}</td>
+                                <td>${totals[i].yes}</td>
+                                <td>${totals[i].no}</td>
                             </tr>
                         `;
                     }).join('')}
