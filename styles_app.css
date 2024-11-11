@@ -6,6 +6,7 @@
             --yellow: #FFC87E;
             --primary: var(--header-bg);
             --border-color: #E5E5E5;
+            --subhead-color: #2C3E50; /* New color variable for subhead */
         }
         
         body {
@@ -695,4 +696,9 @@
         #addDaysBtn {
             height: 35px;
             white-space: nowrap;
+        }
+
+        .hero-section p {
+            /* ...existing code... */
+            color: var(--subhead-color); /* Update subhead color */
         }
