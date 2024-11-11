@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EventBrighter</title>
+    <title>Girls and Getaways - Admin</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
         :root {
@@ -181,9 +181,76 @@
         .delete-event-btn:hover {
             background: darkred;
         }
+
+        .main-header {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+
+        .logo-container {
+            text-align: left;
+            flex-shrink: 0;
+        }
+
+        .logo-container img {
+            max-width: 150px;
+            height: auto;
+        }
+
+        .header-text {
+            flex-grow: 1;
+        }
+
+        .header-text h1 {
+            margin: 0;
+            color: #2C3E50;
+            font-size: 2rem;
+        }
+
+        /* Tablet and mobile responsiveness */
+        @media (max-width: 768px) {
+            .main-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .logo-container {
+                margin: 0 auto;
+            }
+
+            .header-text h1 {
+                font-size: 1.5rem;
+            }
+
+            form {
+                padding: 15px;
+            }
+
+            input, textarea, button {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .date-input {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="main-header">
+        <div class="logo-container">
+            <img src="gng.png" alt="Girls and Getaways Logo">
+        </div>
+        <div class="header-text">
+            <h1>Event Admin System</h1>
+        </div>
+    </div>
+
     <div id="createEventView">
         <h2>Create New Event</h2>
         <form id="eventForm">
