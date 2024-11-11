@@ -116,7 +116,8 @@
             text-align: center;
             font-size: 14px;
             line-height: 1.3;
-            white-space: nowrap;
+            white-space: normal;  /* Changed from nowrap */
+            max-width: 100px;    /* Added max-width */
         }
 
         .date-number {
@@ -402,15 +403,20 @@
             
             // Check if it's a specific date (start equals end)
             if (dateRange.start === dateRange.end) {
-                return startDate.toLocaleDateString('en-US', {
+                const dayOfWeek = startDate.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    timeZone: 'UTC'
+                });
+                const date = startDate.toLocaleDateString('en-US', {
                     month: '2-digit',
                     day: '2-digit',
                     year: '2-digit',
                     timeZone: 'UTC'
                 });
+                return `${dayOfWeek}<br>${date}`;
             }
             
-            // If it's a date range
+            // If it's a date range, use the original format
             return `${startDate.toLocaleDateString('en-US', {
                 month: '2-digit',
                 day: '2-digit',
@@ -587,8 +593,10 @@
         <h1>How to Submit</h1>
         <ol>
             <li>Click the (?) under each date range to update</li>
-            <li>(✓) means date range works for you</li>
-            <li>(✗) means date range does not work for you</li>
+            <li>(✓) means dates works for you</li>
+            <li>(✗) means dates do not work for you</li>
+            <li>(?) means you have selected yet</li>
+            <li>Clicking again changes your selection</li>
             <li>Click "Submit" when finished</li>
         </ol>
     </div>
