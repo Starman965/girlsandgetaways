@@ -67,7 +67,7 @@
                         <label><input type="checkbox" name="daysOfWeek" value="Friday"> Friday</label>
                         <label><input type="checkbox" name="daysOfWeek" value="Saturday"> Saturday</label>
                     </div>
-                    <button type="button" id="addDaysBtn" onclick="addDaysOfWeek()">Add Days</button>
+                    <button type="button" id="addDaysBtn" class="submit-btn" onclick="addDaysOfWeek()">Add Days</button>
                 </div>
 
                 <!-- Replace the date input section -->
@@ -76,6 +76,7 @@
                         <div class="date-field specific-date">
                             <label for="specificDateInput">Date</label>
                             <input type="date" id="specificDateInput" class="date-input-field" placeholder="Date">
+                            <button type="button" id="addSpecificDateBtn" class="submit-btn" onclick="addDate()">Add Date</button>
                         </div>
                         <div class="date-field range-date" style="display: none;">
                             <div class="range-inputs">
@@ -87,7 +88,7 @@
                                     <label for="endDateInput">End Date</label>
                                     <input type="date" id="endDateInput" class="date-input-field" placeholder="End Date">
                                 </div>
-                                <button type="button" id="addDateBtn" onclick="addDate()">Add Range</button>
+                                <button type="button" id="addDateBtn" class="submit-btn" onclick="addDate()">Add Date Range</button>
                             </div>
                         </div>
                     </div>

@@ -374,7 +374,7 @@ async function createEvent(e) {
         participants: {},
         userId: currentUser.uid,
         created: new Date().toISOString(),
-        tribeId: document.getElementById('tribeSelect').value
+        tribeId: tribeId
     };
 
     try {
@@ -385,13 +385,16 @@ async function createEvent(e) {
         // Generate and display the vote URL
         const voteUrl = `${window.location.origin}/vote.html?event=${newEventRef.key}&user=${currentUser.uid}`;
         const shareLinkInput = document.getElementById('shareLinkInput');
-        shareLinkInput.value = voteUrl;
-        document.getElementById('shareLink').style.display = 'block';
+        if (shareLinkInput) {
+            shareLinkInput.value = voteUrl;
+            document.getElementById('shareLink').style.display = 'block';
+        }
         
         // Clear the form
         document.getElementById('eventTitle').value = '';
         document.getElementById('eventDescription').value = '';
-        document.getElementById('dateInput').value = '';
+        document.getElementById('specificDateInput').value = '';
+        document.getElementById('startDateInput').value = '';
         document.getElementById('endDateInput').value = '';
         selectedDates = [];
         renderDates();
@@ -546,33 +549,36 @@ async function loadEvents() {
 // Add this function to handle radio button changes
 function handleEventTypeChange() {
     const eventType = document.querySelector('input[name="eventType"]:checked')?.value;
-    const endDateField = document.querySelector('.range-date');
-    const dateInput = document.querySelector('.date-input');
-    const addDateBtn = document.getElementById('addDateBtn');
+    const specificDateField = document.querySelector('.specific-date');
+    const rangeDateField = document.querySelector('.range-date');
     const dayOfWeekSelector = document.getElementById('dayOfWeekSelector');
-    
-    if (!eventType || !endDateField || !dateInput || !addDateBtn || !dayOfWeekSelector) {
+    const addSpecificDateBtn = document.getElementById('addSpecificDateBtn');
+    const addDateBtn = document.getElementById('addDateBtn');
+    const addDaysBtn = document.getElementById('addDaysBtn');
+
+    if (!eventType || !specificDateField || !rangeDateField || !dayOfWeekSelector || !addSpecificDateBtn || !addDateBtn || !addDaysBtn) {
         return;
     }
 
-    endDateField.style.display = 'none';
-    dateInput.style.display = 'block';
+    specificDateField.style.display = 'none';
+    rangeDateField.style.display = 'none';
     dayOfWeekSelector.style.display = 'none';
-    
+    addSpecificDateBtn.style.display = 'none';
+    addDateBtn.style.display = 'none';
+    addDaysBtn.style.display = 'none';
+
     switch(eventType) {
         case 'specific':
-            addDateBtn.style.display = 'none';
-            document.getElementById('dateInput')?.classList.add('specific-date-input');
+            specificDateField.style.display = 'block';
+            addSpecificDateBtn.style.display = 'block';
             break;
         case 'range':
-            endDateField.style.display = 'block';
+            rangeDateField.style.display = 'block';
             addDateBtn.style.display = 'block';
-            addDateBtn.textContent = 'Add Date Range';
-            document.getElementById('dateInput')?.classList.remove('specific-date-input');
             break;
         case 'dayOfWeek':
-            dateInput.style.display = 'none';
             dayOfWeekSelector.style.display = 'block';
+            addDaysBtn.style.display = 'block';
             break;
     }
 }
