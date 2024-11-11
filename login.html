@@ -159,7 +159,7 @@
     <script type="module">
         import { firebaseConfig } from './firebase-config.js';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -171,17 +171,6 @@
 
         document.getElementById('showSignupBtn').addEventListener('click', () => toggleViews(true));
         document.getElementById('showLoginBtn').addEventListener('click', () => toggleViews(false));
-
-        document.getElementById('googleLoginBtn').addEventListener('click', async () => {
-            const provider = new GoogleAuthProvider();
-            try {
-                await signInWithPopup(auth, provider);
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error("Error logging in with Google:", error);
-                alert("Error logging in with Google");
-            }
-        });
 
         document.getElementById('emailLoginSubmitBtn').addEventListener('click', async () => {
             const email = document.getElementById('emailInput').value;
