@@ -73,24 +73,38 @@ window.removeDate = function(startDate, endDate) {
 //     document.execCommand('copy');
 // };
 
-// Add this new function
-window.copyEventLink = async function() {
+// Add this utility function
+function getVoteUrl(eventId) {
+    return `${window.location.origin}/vote.html?event=${eventId}`;
+}
+
+// Replace the existing copyEventLink function
+window.copyEventLink = async function(eventId) {
     try {
-        const linkInput = document.getElementById('shareLinkInput');
-        await navigator.clipboard.writeText(linkInput.value);
+        let linkText;
+        if (eventId) {
+            // Called from event report
+            const linkElements = document.querySelectorAll(`.event-link[data-event-id="${eventId}"]`);
+            if (linkElements.length > 0) {
+                linkText = linkElements[0].value;
+            }
+        } else {
+            // Called from create event view
+            const shareLinkInput = document.getElementById('shareLinkInput');
+            if (shareLinkInput) {
+                linkText = shareLinkInput.value;
+            }
+        }
+
+        if (!linkText) {
+            throw new Error('Could not find link to copy');
+        }
+
+        await navigator.clipboard.writeText(linkText);
         alert('Link copied to clipboard!');
     } catch (err) {
         console.error('Failed to copy:', err);
-        // Fallback to old method if Clipboard API fails
-        const linkInput = document.getElementById('shareLinkInput');
-        linkInput.select();
-        try {
-            document.execCommand('copy');
-            alert('Link copied to clipboard!');
-        } catch (e) {
-            console.error('Fallback copy failed:', e);
-            alert('Failed to copy link. Please copy it manually.');
-        }
+        alert('Failed to copy link. Please copy it manually.');
     }
 };
 
@@ -119,9 +133,40 @@ function formatDateForDisplay(dateStr) {
     });
 }
 
+// Add this new function to handle adding days of week
+window.addDaysOfWeek = function() {
+    const checkboxes = document.querySelectorAll('input[name="daysOfWeek"]:checked');
+    if (checkboxes.length === 0) {
+        alert('Please select at least one day of the week');
+        return;
+    }
+
+    const selectedDays = Array.from(checkboxes).map(cb => cb.value);
+    const dateRange = {
+        type: 'dayOfWeek',
+        days: selectedDays
+    };
+
+    // Remove any existing day of week entries
+    selectedDates = selectedDates.filter(d => !d.type || d.type !== 'dayOfWeek');
+    selectedDates.push(dateRange);
+    renderDates();
+
+    // Uncheck all checkboxes
+    document.querySelectorAll('input[name="daysOfWeek"]').forEach(cb => cb.checked = false);
+};
+
 function renderDates() {
     const datesList = document.getElementById('datesList');
     datesList.innerHTML = selectedDates.map(dateRange => {
+        if (dateRange.type === 'dayOfWeek') {
+            return `
+                <div class="date-tag">
+                    Days of Week: ${dateRange.days.join(', ')}
+                    <button onclick="removeDate('dayOfWeek')">&times;</button>
+                </div>
+            `;
+        }
         const isSpecificDate = dateRange.start === dateRange.end;
         const displayText = isSpecificDate ? 
             formatDateForDisplay(dateRange.start) :
@@ -142,11 +187,21 @@ async function createEvent(e) {
     const eventData = {
         title: document.getElementById('eventTitle').value,
         description: document.getElementById('eventDescription').value,
-        dates: selectedDates.map(dateRange => ({
-            start: dateRange.start,
-            end: dateRange.end,
-            displayRange: `${formatDateForDisplay(dateRange.start)} to ${formatDateForDisplay(dateRange.end)}`
-        })),
+        type: document.querySelector('input[name="eventType"]:checked').value,
+        dates: selectedDates.map(dateRange => {
+            if (dateRange.type === 'dayOfWeek') {
+                return {
+                    type: 'dayOfWeek',
+                    days: dateRange.days,
+                    displayRange: `Days: ${dateRange.days.join(', ')}`
+                };
+            }
+            return {
+                start: dateRange.start,
+                end: dateRange.end,
+                displayRange: `${formatDateForDisplay(dateRange.start)} to ${formatDateForDisplay(dateRange.end)}`
+            };
+        }),
         createdBy: 'anonymous',
         participants: {},
         created: new Date().toISOString()
@@ -181,7 +236,7 @@ async function createEvent(e) {
 function renderEventReport(eventId, eventData) {
     const votes = eventData.participants || {};
     const dateRanges = eventData.dates || [];
-    const voteUrl = `${window.location.origin}/vote.html?event=${eventId}`;
+    const voteUrl = getVoteUrl(eventId);
     
     // Calculate totals for each date range
     const totals = dateRanges.map((_, index) => {
@@ -199,7 +254,7 @@ function renderEventReport(eventId, eventData) {
             <p>${eventData.description || ''}</p>
             
             <div class="event-link-container">
-                <input class="event-link" type="text" readonly value="${voteUrl}">
+                <input class="event-link" type="text" readonly value="${voteUrl}" data-event-id="${eventId}">
                 <button class="copy-button" onclick="copyEventLink('${eventId}')">Copy Link</button>
             </div>
 
@@ -207,11 +262,21 @@ function renderEventReport(eventId, eventData) {
                 <h4>Summary</h4>
                 <table class="report-table">
                     <tr>
-                        <th>${dateRanges[0]?.start === dateRanges[0]?.end ? 'Date' : 'Date Range'}</th>
+                        <th>${eventData.type === 'dayOfWeek' ? 'Day' : 
+                             dateRanges[0]?.start === dateRanges[0]?.end ? 'Date' : 'Date Range'}</th>
                         <th>Yes</th>
                         <th>No</th>
                     </tr>
                     ${dateRanges.map((range, i) => {
+                        if (range.type === 'dayOfWeek') {
+                            return range.days.map(day => `
+                                <tr>
+                                    <td>${day}</td>
+                                    <td>${totals[i].yes}</td>
+                                    <td>${totals[i].no}</td>
+                                </tr>
+                            `).join('');
+                        }
                         const isSpecificDate = range.start === range.end;
                         const displayDate = isSpecificDate ? 
                             formatDateForDisplay(range.start) :
@@ -273,14 +338,25 @@ async function loadEventReports() {
 function handleEventTypeChange() {
     const eventType = document.querySelector('input[name="eventType"]:checked').value;
     const endDateField = document.querySelector('.range-date');
-    const addButton = document.getElementById('addDateBtn');
+    const dateInput = document.querySelector('.date-input');
+    const dayOfWeekSelector = document.getElementById('dayOfWeekSelector');
     
-    if (eventType === 'specific') {
-        endDateField.style.display = 'none';
-        addButton.textContent = 'Add Date';
-    } else {
-        endDateField.style.display = 'block';
-        addButton.textContent = 'Add Date Range';
+    endDateField.style.display = 'none';
+    dateInput.style.display = 'block';
+    dayOfWeekSelector.style.display = 'none';
+    
+    switch(eventType) {
+        case 'specific':
+            document.getElementById('addDateBtn').textContent = 'Add Date';
+            break;
+        case 'range':
+            endDateField.style.display = 'block';
+            document.getElementById('addDateBtn').textContent = 'Add Date Range';
+            break;
+        case 'dayOfWeek':
+            dateInput.style.display = 'none';
+            dayOfWeekSelector.style.display = 'block';
+            break;
     }
 }
 
