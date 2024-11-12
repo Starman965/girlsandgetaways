@@ -38,6 +38,16 @@ function getUserRef() {
     return `users/${currentUser.uid}`;
 }
 
+// Add this sorting utility function at the top with other utility functions
+function sortPeopleArray(people) {
+    return Object.entries(people)
+        .sort((a, b) => {
+            const nameA = `${a[1].firstName} ${a[1].lastName}`.toLowerCase();
+            const nameB = `${b[1].firstName} ${b[1].lastName}`.toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+}
+
 // Authentication functions
 async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
@@ -696,7 +706,9 @@ function renderPeople(people) {
     
     if (!peopleList || !memberCheckboxes) return;
     
-    peopleList.innerHTML = Object.entries(people || {}).map(([id, person]) => `
+    const sortedPeople = sortPeopleArray(people || {});
+    
+    peopleList.innerHTML = sortedPeople.map(([id, person]) => `
         <div class="person-item">
             <span>${person.firstName} ${person.lastName}</span>
             <div class="actions">
@@ -706,7 +718,7 @@ function renderPeople(people) {
         </div>
     `).join('');
     
-    memberCheckboxes.innerHTML = Object.entries(people || {}).map(([id, person]) => `
+    memberCheckboxes.innerHTML = sortedPeople.map(([id, person]) => `
         <label class="member-checkbox">
             <input type="checkbox" value="${id}">
             ${person.firstName} ${person.lastName}
@@ -764,13 +776,25 @@ async function createTribe(e) {
 
     try {
         const tribesRef = ref(database, `${getUserRef()}/tribes`);
-        const newTribeRef = push(tribesRef);
-        await set(newTribeRef, {
-            name: tribeName,
-            members: selectedMembers,
-            created: new Date().toISOString(),
-            updated: new Date().toISOString()
-        });
+        
+        // If we're editing an existing tribe, update it instead of creating new
+        if (currentEditingTribeId) {
+            const tribeRef = ref(database, `${getUserRef()}/tribes/${currentEditingTribeId}`);
+            await set(tribeRef, {
+                name: tribeName,
+                members: selectedMembers,
+                updated: new Date().toISOString()
+            });
+        } else {
+            // Create new tribe
+            const newTribeRef = push(tribesRef);
+            await set(newTribeRef, {
+                name: tribeName,
+                members: selectedMembers,
+                created: new Date().toISOString(),
+                updated: new Date().toISOString()
+            });
+        }
 
         // Reset form
         document.getElementById('tribeName').value = '';
@@ -781,8 +805,8 @@ async function createTribe(e) {
             document.getElementById('tribeFormSubmit').textContent = 'Create Group';
         }
     } catch (error) {
-        console.error("Error creating tribe:", error);
-        alert("Error creating tribe");
+        console.error("Error managing tribe:", error);
+        alert("Error managing group");
     }
 }
 
@@ -805,7 +829,7 @@ window.editTribe = async function(tribeId) {
 window.deleteTribe = async function(tribeId) {
     if (!currentUser) return;
     
-    if (confirm('Are you sure you want to delete this tribe? This action cannot be undone.')) {
+    if (confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
         try {
             const tribeRef = ref(database, `${getUserRef()}/tribes/${tribeId}`);
             await remove(tribeRef);
@@ -822,11 +846,15 @@ function populateTribeDropdown(tribes, people) {
     const tribeSelect = document.getElementById('tribeSelect');
     if (!tribeSelect) return;
 
+    const sortedPeople = sortPeopleArray(people || {});
+    const peopleMap = Object.fromEntries(sortedPeople);
+
     tribeSelect.innerHTML = '<option value="">Choose a group...</option>' +
         Object.entries(tribes || {}).map(([id, tribe]) => {
             const memberNames = tribe.members
-                .map(memberId => people[memberId])
+                .map(memberId => peopleMap[memberId])
                 .filter(Boolean)
+                .sort((a, b) => (a.firstName + a.lastName).localeCompare(b.firstName + b.lastName))
                 .map(person => `${person.firstName}`)
                 .join(', ');
             return `<option value="${id}">${tribe.name} (${memberNames})</option>`;
@@ -953,6 +981,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add event listener for profile update
     document.getElementById('profileForm')?.addEventListener('submit', updateProfileInfo);
+
+    // Add select all members button handler
+    document.getElementById('selectAllMembers')?.addEventListener('click', () => {
+        document.querySelectorAll('#memberCheckboxes input[type="checkbox"]')
+            .forEach(checkbox => checkbox.checked = true);
+    });
 
     // Initialize authentication state
     onAuthStateChanged(auth, (user) => {

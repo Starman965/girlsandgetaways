@@ -260,17 +260,32 @@
                 const people = peopleSnap.val() || {};
 
                 // 4. Populate voter select with tribe members
-                const voterSelect = document.getElementById('voterName');
-                voterSelect.innerHTML = '<option value="">Choose your name...</option>';
-                
+                const membersList = [];
                 tribe.members.forEach(memberId => {
                     const person = people[memberId];
                     if (person) {
-                        const option = document.createElement('option');
-                        option.value = person.firstName;
-                        option.textContent = `${person.firstName} ${person.lastName}`;
-                        voterSelect.appendChild(option);
+                        membersList.push({
+                            id: memberId,
+                            firstName: person.firstName,
+                            lastName: person.lastName
+                        });
                     }
+                });
+
+                // Sort the members list
+                membersList.sort((a, b) => 
+                    (a.firstName + a.lastName).toLowerCase().localeCompare((b.firstName + b.lastName).toLowerCase())
+                );
+
+                // Populate the select
+                const voterSelect = document.getElementById('voterName');
+                voterSelect.innerHTML = '<option value="">Choose your name...</option>';
+
+                membersList.forEach(person => {
+                    const option = document.createElement('option');
+                    option.value = person.firstName;
+                    option.textContent = `${person.firstName} ${person.lastName}`;
+                    voterSelect.appendChild(option);
                 });
 
                 // Show the name selection
