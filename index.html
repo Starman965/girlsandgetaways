@@ -15,7 +15,7 @@
                 <img src="gng.png" alt="Girls and Getaways Logo">
             </div>
             <div class="header-text">
-                <h1>Event and Tribe Management</h1>
+                <h1>Event and Group Management</h1>
             </div>
             <div class="user-section">
                 <span id="userName"></span>
@@ -26,7 +26,7 @@
         <div class="tabs">
             <button class="tab-button active" data-tab="createEvent">Create Event</button>
             <button class="tab-button" data-tab="events">Events</button>
-            <button class="tab-button" data-tab="tribes">Tribes</button>
+            <button class="tab-button" data-tab="tribes">Groups</button>
             <button class="tab-button" data-tab="instructions">Instructions</button>
             <button class="tab-button" data-tab="profile">Profile</button>
         </div>
@@ -39,9 +39,9 @@
                 
                 <!-- Add tribe selection before event type -->
                 <div class="form-group">
-                    <label for="tribeSelect">Select Tribe</label>
+                    <label for="tribeSelect">Select Group</label>
                     <select id="tribeSelect" required>
-                        <option value="">Choose a tribe...</option>
+                        <option value="">Choose a group...</option>
                     </select>
                 </div>
                 
@@ -147,9 +147,9 @@
 
                 <!-- Tribes Management Section -->
                 <div class="section-container">
-                    <h2>Tribes</h2>
+                    <h2>Groups</h2>
                     <form id="tribeForm">
-                        <input type="text" id="tribeName" placeholder="Tribe Name" required>
+                        <input type="text" id="tribeName" placeholder="Group Name" required>
                         <div class="member-selection">
                             <h3>Select Members</h3>
                             <div id="memberCheckboxes" class="checkbox-container">
@@ -157,7 +157,7 @@
                             </div>
                         </div>
                         <div class="form-buttons">
-                            <button type="submit" id="tribeFormSubmit">Create Tribe</button>
+                            <button type="submit" id="tribeFormSubmit">Create Group</button>
                             <button type="reset" class="cancel-button">Cancel</button>
                         </div>
                     </form>
@@ -170,16 +170,16 @@
 
         <div id="instructionsView" class="tab-content">
             <h2>Welcome to Girls and Getaways!</h2>
-            <p>We're so excited to help you manage your events and tribes. Here's a quick guide to get you started:</p>
+            <p>We're so excited to help you manage your events and groups. Here's a quick guide to get you started:</p>
             <h3>Step 1: Add People</h3>
-            <p>First, head over to the <strong>Tribes</strong> tab. In the <strong>People</strong> section, you can add all the fabulous ladies who will be part of your events. Just enter their full names and click <strong>Add Person</strong>.</p>
-            <h3>Step 2: Create Tribes</h3>
-            <p>Next, still in the <strong>Tribes</strong> tab, create your tribes. Enter a tribe name and select the members from the list of people you added. Click <strong>Create Tribe</strong> to save your tribe.</p>
+            <p>First, head over to the <strong>Groups</strong> tab. In the <strong>People</strong> section, you can add all the fabulous ladies who will be part of your events. Just enter their full names and click <strong>Add Person</strong>.</p>
+            <h3>Step 2: Create Groups</h3>
+            <p>Next, still in the <strong>Groups</strong> tab, create your groups. Enter a group name and select the members from the list of people you added. Click <strong>Create Group</strong> to save your group.</p>
             <h3>Step 3: Create Events</h3>
-            <p>Now, switch to the <strong>Create Event</strong> tab. Fill in the event details, select the tribe for the event, and choose the event type (specific date, date range, or day of the week). Add the dates and click <strong>Create Event</strong>.</p>
+            <p>Now, switch to the <strong>Create Event</strong> tab. Fill in the event details, select the group for the event, and choose the event type (specific date, date range, or day of the week). Add the dates and click <strong>Create Event</strong>.</p>
             <h3>Step 4: Share the Event</h3>
-            <p>After creating an event, you'll get a shareable link. Copy this link and send it to your tribe members so they can vote on the dates. You can also open the link directly from the app.</p>
-            <p>That's it! You're all set to manage your events and tribes with ease. If you have any questions, feel free to reach out. Happy planning!</p>
+            <p>After creating an event, you'll get a shareable link. Copy this link and send it to your group members so they can vote on the dates. You can also open the link directly from the app.</p>
+            <p>That's it! You're all set to manage your events and groups with ease. If you have any questions, feel free to reach out. Happy planning!</p>
         </div>
 
         <div id="editProfileView" class="tab-content" style="display: none;">

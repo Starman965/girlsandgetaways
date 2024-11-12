@@ -778,7 +778,7 @@ async function createTribe(e) {
         
         if (currentEditingTribeId) {
             currentEditingTribeId = null;
-            document.getElementById('tribeFormSubmit').textContent = 'Create Tribe';
+            document.getElementById('tribeFormSubmit').textContent = 'Create Group';
         }
     } catch (error) {
         console.error("Error creating tribe:", error);
@@ -798,7 +798,7 @@ window.editTribe = async function(tribeId) {
         document.querySelectorAll('#memberCheckboxes input').forEach(cb => {
             cb.checked = tribe.members.includes(cb.value);
         });
-        document.getElementById('tribeFormSubmit').textContent = 'Update Tribe';
+        document.getElementById('tribeFormSubmit').textContent = 'Update Group';  // Changed from 'Update Tribe'
     }
 };
 
@@ -822,7 +822,7 @@ function populateTribeDropdown(tribes, people) {
     const tribeSelect = document.getElementById('tribeSelect');
     if (!tribeSelect) return;
 
-    tribeSelect.innerHTML = '<option value="">Choose a tribe...</option>' +
+    tribeSelect.innerHTML = '<option value="">Choose a group...</option>' +
         Object.entries(tribes || {}).map(([id, tribe]) => {
             const memberNames = tribe.members
                 .map(memberId => people[memberId])
@@ -837,7 +837,7 @@ function cancelTribeEdit() {
     currentEditingTribeId = null;
     document.getElementById('tribeName').value = '';
     document.querySelectorAll('#memberCheckboxes input').forEach(cb => cb.checked = false);
-    document.getElementById('tribeFormSubmit').textContent = 'Create Tribe';
+    document.getElementById('tribeFormSubmit').textContent = 'Create Group';  // Changed from 'Create Tribe'
 }
 
 // Add this function to handle editing a person's name
