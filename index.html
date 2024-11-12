@@ -97,6 +97,11 @@
                 </div>
                 
                 <div id="datesList"></div>
+                <div class="event-settings">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="anonymousResponses"> Make Responses Anonymous
+                    </label>
+                </div>
                 <div class="submit-container">
                     <button type="submit">Create Event</button>
                 </div>
@@ -172,19 +177,84 @@
         <div id="instructionsView" class="tab-content">
             <h2>Welcome to Girls and Getaways!</h2>
             <p>We're so excited to help you manage your events and groups. Here's a quick guide to get you started:</p>
+            
             <h3>Step 1: Add People</h3>
             <p>First, head over to the <strong>Groups</strong> tab. In the <strong>People</strong> section, you can add all the fabulous ladies who will be part of any of your events. Just enter their full names and click <strong>Add Person</strong>.</p>
+            
             <h3>Step 2: Create Groups</h3>
             <p>Next, still in the <strong>Groups</strong> tab, create your groups. Enter a group name and select the members from the list of people you added. When you create events, you attach a group to the event like your travel group, book club group, etc. Click <strong>Create Group</strong> to save the group.</p>
+            
             <h3>Step 3: Create Events</h3>
-            <p>Now, switch to the <strong>Create Event</strong> tab. Fill in the event details, select the group for the event, and choose the event type (specific date, date range, or day of the week). Add the dates and click <strong>Create Event</strong>.</p>
-            <h3>Step 4: Share the Event</h3>
-            <p>After creating an event, you'll get a shareable link. Copy this link and send it to your group members so they can vote on the dates. You can also open the link directly from the app by clicking Go.</p>
-            <p>That's it! You're all set to manage your events and groups with ease. Happy planning!</p>
-            <h3>Step 5: Review Responses</h3>
-            <p>As people respond to the Event poll, you'll see their responses under the Events tab by reviewing the summary report and individual response table for each Event.</p>
-            <p>That's it! You're all set to manage your events and groups with ease. Happy planning!</p>
-</div>
+            <p>Now, switch to the <strong>Create Event</strong> tab. Fill in the event details, select the group for the event, and choose the event type:</p>
+            <ul>
+                <li><strong>Specific Date</strong>: Add individual dates one at a time for each day you're proposing to meet up</li>
+                <li><strong>Date Range</strong>: Select a start and end date for each range. Use this for planning potential trip dates for example</li>
+                <li><strong>Day of Week</strong>: Choose which specific days of the week to offer. This is ideal for deciding which day of the week is best like for a regular play date</li>
+            </ul>
+            
+            <h3>Step 4: Anonymous Voting</h3>
+            <p>When creating an event, you can enable anonymous voting by checking the <strong>Make Responses Anonymous</strong> box. Here's how it works:</p>
+            <ul>
+                <li>When enabled, participants can only see their own responses</li>
+                <li>Other participants' votes remain hidden</li>
+                <li>As the event creator, you can still see all responses</li>
+                <li>This setting can help prevent group influence on voting decisions</li>
+            </ul>
+            
+            <h3>Step 5: Share and Monitor</h3>
+            <p>After creating an event, you'll get a shareable link. Copy this link and send it to your group members. You can track responses in the Events tab, which shows both summary statistics and individual responses.</p>
+
+            <h3>Frequently Asked Questions</h3>
+            <div class="faq-section">
+                <h4>General Questions</h4>
+                <ul>
+                    <li><strong>Q: How many events can I create?</strong><br>
+                    A: There is no limit to the number of events you can create.</li>
+                    
+                    <li><strong>Q: Can I edit an event after creating it?</strong><br>
+                    A: Yes, you can edit the title, description, and dates of an event at any time. You can also toggle anonymous voting.</li>
+                    
+                    <li><strong>Q: What happens to existing votes if I edit event dates?</strong><br>
+                    A: When you add new dates, existing votes are preserved. If you remove dates, the corresponding votes are removed.</li>
+                </ul>
+
+                <h4>Groups and People</h4>
+                <ul>
+                    <li><strong>Q: Can someone be in multiple groups?</strong><br>
+                    A: Yes, you can add the same person to as many groups as you need.</li>
+                    
+                    <li><strong>Q: What happens if I delete a person?</strong><br>
+                    A: Deleting a person removes them from all groups and their votes from all events.</li>
+                    
+                    <li><strong>Q: Can I rename a person or group?</strong><br>
+                    A: Yes, you can edit names by clicking the edit button next to any person or group.</li>
+                </ul>
+
+                <h4>Voting and Privacy</h4>
+                <ul>
+                    <li><strong>Q: How does anonymous voting work?</strong><br>
+                    A: When enabled, participants can only see their own votes. Only the event creator can see all responses.</li>
+                    
+                    <li><strong>Q: Can I change the anonymous setting after creating an event?</strong><br>
+                    A: Yes, you can toggle anonymous voting at any time from the Events tab.</li>
+                    
+                    <li><strong>Q: Do participants need an account to vote?</strong><br>
+                    A: No, participants only need the event link and to select their name from the group list.</li>
+                </ul>
+
+                <h4>Technical Questions</h4>
+                <ul>
+                    <li><strong>Q: Which browsers are supported?</strong><br>
+                    A: The app works on all modern browsers, including mobile devices.</li>
+                    
+                    <li><strong>Q: Are my event details secure?</strong><br>
+                    A: Yes, your data is stored securely and only accessible to you and your event participants.</li>
+                    
+                    <li><strong>Q: Can I export event data?</strong><br>
+                    A: Currently, you can view all data in the app. Export functionality may be added in future updates.</li>
+                </ul>
+            </div>
+        </div>
 
         <div id="editProfileView" class="tab-content" style="display: none;">
             <h2>Edit Profile</h2>

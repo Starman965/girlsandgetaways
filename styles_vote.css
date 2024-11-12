@@ -82,7 +82,7 @@ h1, h2, h3 {
 
 .voting-table th {
     background: var(--header-bg);
-    color: white;             /* White text for better contrast */
+    color: white !important;  /* Force white color for all header cells */
     padding: 20px 15px;
     text-align: center;
     font-weight: 500;
@@ -109,6 +109,7 @@ h1, h2, h3 {
 }
 
 .date-header {
+    color: white;             /* Add this line to ensure date headers are white */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -271,6 +272,31 @@ h1, h2, h3 {
 .confirmation-message h2 {
     color: var(--tiffany-blue);
     margin-bottom: 20px;
+}
+
+/* Anonymous voting styles */
+/* Remove or update this rule that was making names transparent */
+.voting-table tr:not(:first-child) td:first-child {
+    /* Remove the color: transparent and user-select properties */
+    font-weight: 500;  /* Add this to make all names consistently bold */
+    color: #2C3E50;    /* Add this to make all names dark and readable */
+}
+
+.voting-table tr.current-voter td:first-child {
+    color: #2C3E50 !important;  /* Update this to match other names */
+}
+
+.voting-table tr:first-child th {
+    background: var(--header-bg);  /* Keep the background color rule */
+}
+
+.anonymous-notice {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
 }
 
 /* Mobile Responsive Styles */

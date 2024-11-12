@@ -32,6 +32,7 @@ let selectedDates = [];
 let currentEditingTribeId = null;
 let currentUser = null; // Add this at the top with other global variables
 let editingEventId = null; // Add at the top with other globals
+let lastSelectedDate = null; // Add this near the top with other global variables
 
 // Add these functions near the top with other globals
 function getUserRef() {
@@ -397,6 +398,8 @@ async function createEvent(e) {
         title: document.getElementById('eventTitle').value,
         description: document.getElementById('eventDescription').value,
         type: document.querySelector('input[name="eventType"]:checked').value,
+        // Add anonymous setting
+        anonymous: document.getElementById('anonymousResponses').checked,
         dates: selectedDates.map(dateRange => {
             if (dateRange.type === 'dayOfWeek') {
                 return {
@@ -537,6 +540,12 @@ function renderEventReport(eventId, eventData) {
                     </h3>
                 </div>
                 <div class="event-actions">
+                    <label class="anonymous-toggle">
+                        <input type="checkbox" 
+                            ${eventData.anonymous ? 'checked' : ''} 
+                            onchange="window.toggleAnonymous('${eventId}', this.checked)">
+                        Anonymous Responses
+                    </label>
                     <button class="edit-dates-btn" onclick="window.editEventDates('${eventId}')">Edit Dates</button>
                     <button class="delete-event-btn" onclick="deleteEvent('${eventId}')">Delete Event</button>
                 </div>
@@ -700,6 +709,8 @@ window.editEventDates = async function(eventId) {
         cancelBtn.textContent = 'Cancel Edit';
         cancelBtn.onclick = cancelEventEdit;
         submitBtn.parentNode.appendChild(cancelBtn);
+
+        document.getElementById('anonymousResponses').checked = eventData.anonymous || false;
     } catch (error) {
         console.error('Error loading event for editing:', error);
         alert('Error loading event for editing');
@@ -1203,4 +1214,64 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'login.html';
         }
     });
+
+    // Add these new event listeners for date inputs
+    const startDateInput = document.getElementById('startDateInput');
+    const endDateInput = document.getElementById('endDateInput');
+    const specificDateInput = document.getElementById('specificDateInput');
+
+    // Function to set default date when opening date picker
+    function setDefaultDate(input) {
+        if (lastSelectedDate) {
+            // Set the input's default view to the last selected month/year
+            const defaultView = lastSelectedDate.toISOString().split('T')[0];
+            input.setAttribute('min', new Date().toISOString().split('T')[0]); // Prevent past dates
+            if (!input.value) {  // Only set if no date is currently selected
+                input.valueAsDate = new Date(defaultView);
+            }
+        }
+    }
+
+    // Add focus event listeners to set default date
+    startDateInput?.addEventListener('focus', () => setDefaultDate(startDateInput));
+    endDateInput?.addEventListener('focus', () => setDefaultDate(endDateInput));
+    specificDateInput?.addEventListener('focus', () => setDefaultDate(specificDateInput));
+
+    // Add change event listeners to update lastSelectedDate
+    startDateInput?.addEventListener('change', (e) => {
+        if (e.target.value) {
+            lastSelectedDate = new Date(e.target.value);
+            // Update end date min value to prevent selecting earlier dates
+            endDateInput.setAttribute('min', e.target.value);
+        }
+    });
+
+    endDateInput?.addEventListener('change', (e) => {
+        if (e.target.value) {
+            lastSelectedDate = new Date(e.target.value);
+        }
+    });
+
+    specificDateInput?.addEventListener('change', (e) => {
+        if (e.target.value) {
+            lastSelectedDate = new Date(e.target.value);
+        }
+    });
 });
+
+// Add this new function to handle the anonymous toggle
+window.toggleAnonymous = async function(eventId, isAnonymous) {
+    if (!currentUser) return;
+    
+    try {
+        const eventRef = ref(database, `${getUserRef()}/events/${eventId}`);
+        await set(eventRef, {
+            ...(await get(eventRef)).val(),
+            anonymous: isAnonymous
+        });
+        // The real-time listener will automatically update the UI
+    } catch (error) {
+        console.error("Error updating anonymous setting:", error);
+        alert("Error updating anonymous setting");
+    }
+};

@@ -100,6 +100,14 @@
             const headerRow = document.createElement('tr');
             headerRow.innerHTML = `<th>Name</th>`;
 
+            // Add anonymous notice if enabled
+            if (event.anonymous) {
+                const notice = document.createElement('div');
+                notice.className = 'anonymous-notice';
+                notice.textContent = 'Responses are anonymous. You can only see your own response.';
+                container.appendChild(notice);
+            }
+
             // Handle different date formats in header
             if (event.type === 'dayOfWeek') {
                 // For day of week events, create a column for each day
@@ -124,8 +132,9 @@
             }
             table.appendChild(headerRow);
 
-            // Voting row
+            // Voting row - always visible
             const votingRow = document.createElement('tr');
+            votingRow.className = 'current-voter';
             votingRow.innerHTML = `<td><strong>${voterName}</strong></td>`;
             
             // Initialize votes
@@ -153,19 +162,21 @@
             });
             table.appendChild(votingRow);
 
-            // Other participants' rows
-            Object.entries(event.participants || {}).forEach(([name, data]) => {
-                if (name !== voterName) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td>${name}</td>`;
-                    data.votes.forEach(vote => {
-                        const symbol = vote === 2 ? '✓' : '✗';
-                        const voteClass = vote === 2 ? 'vote-yes' : 'vote-no';
-                        row.innerHTML += `<td class="${voteClass}">${symbol}</td>`;
-                    });
-                    table.appendChild(row);
-                }
-            });
+            // Other participants' rows - only if not anonymous
+            if (!event.anonymous) {
+                Object.entries(event.participants || {}).forEach(([name, data]) => {
+                    if (name !== voterName) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td>${name}</td>`;
+                        data.votes.forEach(vote => {
+                            const symbol = vote === 2 ? '✓' : '✗';
+                            const voteClass = vote === 2 ? 'vote-yes' : 'vote-no';
+                            row.innerHTML += `<td class="${voteClass}">${symbol}</td>`;
+                        });
+                        table.appendChild(row);
+                    }
+                });
+            }
 
             container.innerHTML = '';
             container.appendChild(table);

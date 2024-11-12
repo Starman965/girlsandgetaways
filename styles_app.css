@@ -882,3 +882,19 @@
 .cancel-edit-btn:hover {
     background-color: #da190b;
 }
+
+/* Add styles for anonymous voting */
+.voting-table tr:not(:first-child):not(.current-voter) td:first-child {
+    color: transparent;
+    user-select: none;  /* Prevents selecting/copying hidden names */
+}
+
+/* Show the current voter's name */
+.voting-table tr.current-voter td:first-child {
+    color: inherit;
+}
+
+/* Keep table header text visible */
+.voting-table tr:first-child th {
+    color: inherit;
+}
