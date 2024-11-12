@@ -31,6 +31,7 @@ const auth = getAuth(app);
 let selectedDates = [];
 let currentEditingTribeId = null;
 let currentUser = null; // Add this at the top with other global variables
+let editingEventId = null; // Add at the top with other globals
 
 // Add these functions near the top with other globals
 function getUserRef() {
@@ -418,31 +419,43 @@ async function createEvent(e) {
     };
 
     try {
-        const eventsRef = ref(database, `${getUserRef()}/events`);
-        const newEventRef = push(eventsRef);
-        await set(newEventRef, eventData);
-        
-        // Generate and display the vote URL
-        const voteUrl = `${window.location.origin}/vote.html?event=${newEventRef.key}&user=${currentUser.uid}`;
-        const shareLinkInput = document.getElementById('shareLinkInput');
-        if (shareLinkInput) {
-            shareLinkInput.value = voteUrl;
-            document.getElementById('shareLink').style.display = 'block';
+        let eventRef;
+        if (editingEventId) {
+            // Update existing event
+            eventRef = ref(database, `${getUserRef()}/events/${editingEventId}`);
+            // Preserve creation data and votes
+            const existingEvent = (await get(eventRef)).val();
+            eventData.created = existingEvent.created;
+            eventData.participants = existingEvent.participants || {};
+        } else {
+            // Create new event
+            eventRef = push(ref(database, `${getUserRef()}/events`));
+            eventData.created = new Date().toISOString();
+            eventData.participants = {};
         }
+
+        await set(eventRef, eventData);
         
-        // Clear the form
-        document.getElementById('eventTitle').value = '';
-        document.getElementById('eventDescription').value = '';
-        document.getElementById('specificDateInput').value = '';
-        document.getElementById('startDateInput').value = '';
-        document.getElementById('endDateInput').value = '';
+        // Reset form and state
+        document.getElementById('eventForm').reset();
         selectedDates = [];
         renderDates();
         
-        console.log('Event created successfully:', newEventRef.key);
+        if (editingEventId) {
+            editingEventId = null;
+            document.querySelector('#eventForm button[type="submit"]').textContent = 'Create Event';
+            const cancelBtn = document.querySelector('.cancel-edit-btn');
+            if (cancelBtn) cancelBtn.remove();
+            alert('Event updated successfully');
+        } else {
+            // Show share link for new events
+            const voteUrl = getVoteUrl(eventRef.key);
+            document.getElementById('shareLinkInput').value = voteUrl;
+            document.getElementById('shareLink').style.display = 'block';
+        }
     } catch (error) {
-        console.error("Error creating event: ", error);
-        alert("Error creating event. Please try again.");
+        console.error("Error managing event: ", error);
+        alert("Error managing event. Please try again.");
     }
 };
 
@@ -503,7 +516,10 @@ function renderEventReport(eventId, eventData) {
                         <h4>Group Attached: ${tribeInfo.name}</h4>
                     </div>
                 </div>
-                <button class="delete-event-btn" onclick="deleteEvent('${eventId}')">Delete Event</button>
+                <div class="event-actions">
+                    <button class="edit-dates-btn" onclick="window.editEventDates('${eventId}')">Edit Dates</button>
+                    <button class="delete-event-btn" onclick="deleteEvent('${eventId}')">Delete Event</button>
+                </div>
             </div>
             <div class="description-container">
                 <p class="event-description">${eventData.description || 'No description'}</p>
@@ -603,6 +619,83 @@ window.editEventField = async function(eventId, field, currentValue) {
         }
     }
 };
+
+// Add these new functions
+window.editEventDates = async function(eventId) {
+    if (!currentUser) return;
+    
+    try {
+        const eventRef = ref(database, `${getUserRef()}/events/${eventId}`);
+        const eventSnap = await get(eventRef);
+        const eventData = eventSnap.val();
+        
+        if (!eventData) {
+            throw new Error('Event not found');
+        }
+
+        // Switch to create event view
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelector('[data-tab="createEvent"]').classList.add('active');
+        document.getElementById('createEventView').classList.add('active');
+        
+        // Populate form with existing data
+        document.getElementById('eventTitle').value = eventData.title;
+        document.getElementById('eventDescription').value = eventData.description;
+        document.getElementById('tribeSelect').value = eventData.tribeId;
+        
+        // Set event type
+        document.querySelector(`input[name="eventType"][value="${eventData.type}"]`).checked = true;
+        handleEventTypeChange();
+        
+        // Load existing dates
+        selectedDates = eventData.dates.map(date => {
+            if (date.type === 'dayOfWeek') {
+                return {
+                    type: 'dayOfWeek',
+                    days: date.days
+                };
+            }
+            return {
+                start: date.start,
+                end: date.end
+            };
+        });
+        
+        renderDates();
+        editingEventId = eventId;
+        
+        // Update form submit button text
+        const submitBtn = document.querySelector('#eventForm button[type="submit"]');
+        submitBtn.textContent = 'Update Event';
+        
+        // Show cancel button
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'cancel-edit-btn';
+        cancelBtn.textContent = 'Cancel Edit';
+        cancelBtn.onclick = cancelEventEdit;
+        submitBtn.parentNode.appendChild(cancelBtn);
+    } catch (error) {
+        console.error('Error loading event for editing:', error);
+        alert('Error loading event for editing');
+    }
+};
+
+function cancelEventEdit() {
+    editingEventId = null;
+    selectedDates = [];
+    document.getElementById('eventForm').reset();
+    renderDates();
+    
+    // Reset submit button
+    const submitBtn = document.querySelector('#eventForm button[type="submit"]');
+    submitBtn.textContent = 'Create Event';
+    
+    // Remove cancel button
+    const cancelBtn = document.querySelector('.cancel-edit-btn');
+    if (cancelBtn) cancelBtn.remove();
+}
 
 // Change function name from loadEventReports to loadEvents
 async function loadEvents() {

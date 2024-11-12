@@ -747,3 +747,35 @@
 .event-title-section {
     flex-grow: 1;
 }
+
+.event-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-dates-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.edit-dates-btn:hover {
+    background-color: #45a049;
+}
+
+.cancel-edit-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.cancel-edit-btn:hover {
+    background-color: #da190b;
+}
