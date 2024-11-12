@@ -737,3 +737,13 @@
     width: 100%;
     margin-top: 20px;
 }
+
+.tribe-info {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.event-title-section {
+    flex-grow: 1;
+}

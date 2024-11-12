@@ -48,6 +48,40 @@ function sortPeopleArray(people) {
         });
 }
 
+// Add this helper function after getUserRef()
+async function updateEventsForTribe(tribeId, updatedMembers) {
+    if (!currentUser) return;
+    
+    try {
+        const eventsRef = ref(database, `${getUserRef()}/events`);
+        const eventsSnap = await get(eventsRef);
+        const events = eventsSnap.val() || {};
+
+        // Find all events using this tribe
+        const updates = {};
+        Object.entries(events).forEach(([eventId, event]) => {
+            if (event.tribeId === tribeId) {
+                // Keep existing votes for remaining members, remove votes for removed members
+                const updatedParticipants = {};
+                Object.entries(event.participants || {}).forEach(([name, data]) => {
+                    if (updatedMembers.includes(data.memberId)) {
+                        updatedParticipants[name] = data;
+                    }
+                });
+                updates[`${getUserRef()}/events/${eventId}/participants`] = updatedParticipants;
+            }
+        });
+
+        // Apply all updates
+        for (const [path, value] of Object.entries(updates)) {
+            await set(ref(database, path), value);
+        }
+    } catch (error) {
+        console.error("Error updating events for tribe:", error);
+        throw error;
+    }
+}
+
 // Authentication functions
 async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
@@ -171,28 +205,23 @@ window.deletePerson = async function(personId) {
     
     if (confirm('Are you sure you want to delete this person? This will also remove them from any tribes.')) {
         try {
-            // First, get all tribes to update their member lists
+            // Get all tribes first
             const tribesRef = ref(database, `${getUserRef()}/tribes`);
             const tribesSnap = await get(tribesRef);
             const tribes = tribesSnap.val() || {};
 
-            // Remove the person from all tribes
-            const tribeUpdates = {};
-            Object.entries(tribes).forEach(([tribeId, tribe]) => {
+            // Find affected tribes and update them
+            for (const [tribeId, tribe] of Object.entries(tribes)) {
                 if (tribe.members?.includes(personId)) {
-                    tribeUpdates[`${getUserRef()}/tribes/${tribeId}/members`] = 
-                        tribe.members.filter(id => id !== personId);
+                    const updatedMembers = tribe.members.filter(id => id !== personId);
+                    await set(ref(database, `${getUserRef()}/tribes/${tribeId}/members`), updatedMembers);
+                    await updateEventsForTribe(tribeId, updatedMembers);
                 }
-            });
+            }
 
             // Delete the person
             const personRef = ref(database, `${getUserRef()}/people/${personId}`);
             await remove(personRef);
-
-            // Update all affected tribes
-            for (const [path, value] of Object.entries(tribeUpdates)) {
-                await set(ref(database, path), value);
-            }
 
             alert('Person deleted successfully');
         } catch (error) {
@@ -418,6 +447,9 @@ async function createEvent(e) {
 };
 
 function renderEventReport(eventId, eventData) {
+    // Get tribe info - this will be populated by the loadEvents function
+    const tribeInfo = eventData.tribeInfo || { name: 'Unknown Group' };
+    
     const votes = eventData.participants || {};
     const dateRanges = eventData.dates || [];
     const voteUrl = `${window.location.origin}/vote.html?event=${eventId}&user=${currentUser.uid}`;
@@ -467,6 +499,9 @@ function renderEventReport(eventId, eventData) {
                             ✏️
                         </button>
                     </h3>
+                    <div class="tribe-info">
+                        <h4>Group Attached: ${tribeInfo.name}</h4>
+                    </div>
                 </div>
                 <button class="delete-event-btn" onclick="deleteEvent('${eventId}')">Delete Event</button>
             </div>
@@ -574,9 +609,22 @@ async function loadEvents() {
     if (!currentUser) return;
     
     const eventsRef = ref(database, `${getUserRef()}/events`);
-    onValue(eventsRef, (snapshot) => {
+    const tribesRef = ref(database, `${getUserRef()}/tribes`);
+    
+    onValue(eventsRef, async (snapshot) => {
         const events = snapshot.val() || {};
-        const eventsHtml = Object.entries(events)
+        const tribesSnap = await get(tribesRef);
+        const tribes = tribesSnap.val() || {};
+        
+        // Enhance events with tribe info
+        const enhancedEvents = Object.entries(events).map(([eventId, eventData]) => {
+            return [eventId, {
+                ...eventData,
+                tribeInfo: tribes[eventData.tribeId] || { name: 'Unknown Group' }
+            }];
+        });
+        
+        const eventsHtml = enhancedEvents
             .map(([eventId, eventData]) => renderEventReport(eventId, eventData))
             .join('');
         document.getElementById('eventsList').innerHTML = eventsHtml;
@@ -785,6 +833,9 @@ async function createTribe(e) {
                 members: selectedMembers,
                 updated: new Date().toISOString()
             });
+            
+            // Update associated events
+            await updateEventsForTribe(currentEditingTribeId, selectedMembers);
         } else {
             // Create new tribe
             const newTribeRef = push(tribesRef);
