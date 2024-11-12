@@ -211,8 +211,8 @@
             // Update the specific cell using querySelector with data-index
             const cell = document.querySelector(`.voting-table td[data-index="${index}"]`);
             if (cell) {
-                cell.className = newClass;
-                cell.textContent = newContent;
+                cell.className = newClass; // This was missing the new class name
+                cell.textContent = newContent; // This was missing the new content
             }
         };
 
@@ -231,7 +231,7 @@
             await loadEventData();
         };
 
-        // Update loadEventData function
+        // Update loadEventData function to properly handle existing votes
         async function loadEventData() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -255,6 +255,17 @@
                 // Update page with event details
                 document.getElementById('eventTitleDisplay').textContent = event.title;
                 document.getElementById('eventDescriptionDisplay').textContent = event.description;
+
+                // If we already have a voter name and existing votes, load them
+                if (voterName && event.participants && event.participants[voterName]) {
+                    currentVotes = [...event.participants[voterName].votes]; // Create a copy of existing votes
+                } else {
+                    // Initialize fresh votes array based on event type
+                    const numOptions = event.type === 'dayOfWeek' ? 
+                        event.dates[0].days.length : 
+                        event.dates.length;
+                    currentVotes = new Array(numOptions).fill(-1);
+                }
 
                 // Load tribe data from specific user's path
                 if (!event.tribeId) {
@@ -325,16 +336,22 @@
             }
         }
 
-        // Update the submit function to convert -1 to 0 before saving
+        // Update the submit function to save all vote types (-1, 0, and 2)
         window.submitVotes = async function() {
             const urlParams = new URLSearchParams(window.location.search);
             const eventId = urlParams.get('event');
             const userId = urlParams.get('user');
             
             try {
-                const finalVotes = currentVotes.map(v => v === -1 ? 0 : v);
+                console.log('Submitting votes:', currentVotes); // Log votes being submitted
                 const eventRef = ref(database, `users/${userId}/events/${eventId}/participants/${voterName}`);
-                await set(eventRef, { name: voterName, votes: finalVotes });
+                // Save all vote states: -1 (pending/?), 0 (no/✗), 2 (yes/✓)
+                await set(eventRef, { 
+                    name: voterName, 
+                    votes: currentVotes, // currentVotes array maintains -1 for pending votes
+                    lastUpdated: Date.now()
+                });
+                console.log('Votes submitted successfully');
                 window.location.href = 'confirmation.html';
             } catch (error) {
                 console.error('Error submitting votes:', error);

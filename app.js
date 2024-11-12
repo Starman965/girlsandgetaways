@@ -615,14 +615,15 @@ function renderEventReport(eventId, eventData) {
                     ${Object.entries(votes).map(([name, data]) => `
                         <tr>
                             <td>${name}</td>
-                            ${data.votes.map(vote => `
-                                <td>
-                                    ${vote === 1 || vote === undefined ? 
-                                        '<span class="vote-pending">?</span>' : 
-                                        `<span class="${vote === 2 ? 'vote-yes' : 'vote-no'}">${vote === 2 ? '✓' : '✗'}</span>`
-                                    }
-                                </td>
-                            `).join('')}
+                            ${data.votes.map(vote => {
+                                if (vote === -1 || vote === undefined) {
+                                    return '<td><span class="vote-pending">?</span></td>';
+                                } else if (vote === 0) {
+                                    return '<td><span class="vote-no">✗</span></td>';
+                                } else if (vote === 2) {
+                                    return '<td><span class="vote-yes">✓</span></td>';
+                                }
+                            }).join('')}
                         </tr>
                     `).join('')}
                 </table>
