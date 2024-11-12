@@ -304,6 +304,32 @@
             .submit-btn {
                 width: 100%;
             }
+
+            .day-checkboxes {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+            }
+
+            .day-checkboxes label {
+                margin: 0;
+                padding: 8px 0;
+                display: flex;
+                align-items: center;
+                font-size: 16px;
+            }
+
+            .day-checkboxes input[type="checkbox"] {
+                margin-right: 12px;
+                width: 20px;
+                height: 20px;
+            }
+
+            .day-of-week-container {
+                padding: 15px;
+                flex-direction: column;
+            }
         }
 
         .date-input {
