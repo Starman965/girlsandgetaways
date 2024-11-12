@@ -247,6 +247,63 @@
             .date-input {
                 flex-direction: column;
             }
+
+            .range-inputs {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .range-inputs > div {
+                width: 100%;
+            }
+
+            .range-inputs input {
+                width: 100%;
+            }
+
+            .range-inputs button {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 10px;
+            }
+
+            .day-of-week-container {
+                padding: 10px;
+            }
+
+            .day-checkboxes {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .day-checkboxes label {
+                margin: 0;
+                display: flex;
+                align-items: center;
+            }
+
+            .day-checkboxes input[type="checkbox"] {
+                margin-right: 8px;
+            }
+
+            #addDaysBtn {
+                width: 100%;
+                margin-top: 15px;
+            }
+
+            .date-field-group {
+                flex-direction: column;
+            }
+
+            .date-field {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .submit-btn {
+                width: 100%;
+            }
         }
 
         .date-input {

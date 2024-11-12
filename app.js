@@ -959,6 +959,7 @@ async function createTribe(e) {
             
             // Update associated events
             await updateEventsForTribe(currentEditingTribeId, selectedMembers);
+            alert('Group updated successfully');  // Add this line
         } else {
             // Create new tribe
             const newTribeRef = push(tribesRef);
@@ -1007,10 +1008,10 @@ window.deleteTribe = async function(tribeId) {
         try {
             const tribeRef = ref(database, `${getUserRef()}/tribes/${tribeId}`);
             await remove(tribeRef);
-            alert('Tribe deleted successfully');
+            alert('Group deleted successfully');  // Changed from 'Tribe deleted successfully'
         } catch (error) {
             console.error("Error deleting tribe:", error);
-            alert("Error deleting tribe. Please try again.");
+            alert("Error deleting group. Please try again.");  // Changed from "tribe" to "group"
         }
     }
 };
