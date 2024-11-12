@@ -744,6 +744,24 @@
     color: #666;
 }
 
+.tribe-info {
+    margin: 20px 0;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tribe-info h4 {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    color: var(--subhead-color);
+}
+
+.tribe-info p {
+    font-size: 1.1em;
+    margin: 0;
+    color: var(--primary);
+}
+
 .event-title-section {
     flex-grow: 1;
 }

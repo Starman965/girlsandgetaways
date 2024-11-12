@@ -427,6 +427,22 @@ async function createEvent(e) {
             const existingEvent = (await get(eventRef)).val();
             eventData.created = existingEvent.created;
             eventData.participants = existingEvent.participants || {};
+            
+            // Resize existing participant vote arrays to match new dates length
+            const newDatesLength = eventData.dates.length;
+            const participants = existingEvent.participants || {};
+            
+            Object.keys(participants).forEach(participantId => {
+                const currentVotes = participants[participantId].votes || [];
+                // Extend votes array with neutral votes (1) for new dates
+                while (currentVotes.length < newDatesLength) {
+                    currentVotes.push(1);
+                }
+                // Trim extra votes if dates were removed
+                participants[participantId].votes = currentVotes.slice(0, newDatesLength);
+            });
+            
+            eventData.participants = participants;
         } else {
             // Create new event
             eventRef = push(ref(database, `${getUserRef()}/events`));
@@ -446,6 +462,13 @@ async function createEvent(e) {
             document.querySelector('#eventForm button[type="submit"]').textContent = 'Create Event';
             const cancelBtn = document.querySelector('.cancel-edit-btn');
             if (cancelBtn) cancelBtn.remove();
+            
+            // Switch to Events tab after update
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector('[data-tab="events"]').classList.add('active');
+            document.getElementById('eventsView').classList.add('active');
+            
             alert('Event updated successfully');
         } else {
             // Show share link for new events
@@ -512,9 +535,6 @@ function renderEventReport(eventId, eventData) {
                             ✏️
                         </button>
                     </h3>
-                    <div class="tribe-info">
-                        <h4>Group Attached: ${tribeInfo.name}</h4>
-                    </div>
                 </div>
                 <div class="event-actions">
                     <button class="edit-dates-btn" onclick="window.editEventDates('${eventId}')">Edit Dates</button>
@@ -526,6 +546,10 @@ function renderEventReport(eventId, eventData) {
                 <button class="edit-icon" onclick="window.editEventField('${eventId}', 'description', '${eventData.description || ''}')">
                     ✏️
                 </button>
+            </div>
+            <div class="tribe-info">
+                <h4>Group</h4>
+                <p>${tribeInfo.name}</p>
             </div>
             <div class="event-link-container">
                 <input class="event-link" type="text" readonly value="${voteUrl}" data-event-id="${eventId}">
@@ -695,6 +719,12 @@ function cancelEventEdit() {
     // Remove cancel button
     const cancelBtn = document.querySelector('.cancel-edit-btn');
     if (cancelBtn) cancelBtn.remove();
+
+    // Switch to Events tab
+    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector('[data-tab="events"]').classList.add('active');
+    document.getElementById('eventsView').classList.add('active');
 }
 
 // Change function name from loadEventReports to loadEvents
