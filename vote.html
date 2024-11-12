@@ -144,7 +144,7 @@
                 event.dates.length;
             currentVotes = existingVotes || new Array(numOptions).fill(-1);
 
-            // Add voting cells
+            // Modify the voting cells creation
             currentVotes.forEach((vote, index) => {
                 let cellClass = 'vote-pending';
                 let cellContent = '?';
@@ -157,8 +157,12 @@
                     cellContent = '✗';
                 }
                 
-                votingRow.innerHTML += `
-                    <td onclick="window.toggleVote(${index})" class="${cellClass}">${cellContent}</td>`;
+                const td = document.createElement('td');
+                td.className = cellClass;
+                td.textContent = cellContent;
+                td.dataset.index = index; // Add data attribute for index
+                td.addEventListener('click', () => window.toggleVote(index)); // Add direct event listener
+                votingRow.appendChild(td);
             });
             table.appendChild(votingRow);
 
@@ -203,12 +207,13 @@
             }
             
             currentVotes[index] = newValue;
-            // Get the voter's row - it's always the first row after the header
-            const votingRow = document.querySelector('.voting-table tr:nth-child(2)');
-            const cell = votingRow.children[index + 1];
             
-            cell.className = newClass;
-            cell.textContent = newContent;
+            // Update the specific cell using querySelector with data-index
+            const cell = document.querySelector(`.voting-table td[data-index="${index}"]`);
+            if (cell) {
+                cell.className = newClass;
+                cell.textContent = newContent;
+            }
         };
 
         window.startVoting = async function() {

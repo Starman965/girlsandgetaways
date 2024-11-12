@@ -898,3 +898,8 @@
 .voting-table tr:first-child th {
     color: inherit;
 }
+
+.vote-pending {
+    color: #888;
+    font-weight: bold;
+}

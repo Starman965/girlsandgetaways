@@ -617,9 +617,10 @@ function renderEventReport(eventId, eventData) {
                             <td>${name}</td>
                             ${data.votes.map(vote => `
                                 <td>
-                                    <span class="${vote === 2 ? 'vote-yes' : 'vote-no'}">
-                                        ${vote === 2 ? '✓' : '✗'}
-                                    </span>
+                                    ${vote === 1 || vote === undefined ? 
+                                        '<span class="vote-pending">?</span>' : 
+                                        `<span class="${vote === 2 ? 'vote-yes' : 'vote-no'}">${vote === 2 ? '✓' : '✗'}</span>`
+                                    }
                                 </td>
                             `).join('')}
                         </tr>
