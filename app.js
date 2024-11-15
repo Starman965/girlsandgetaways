@@ -50,40 +50,6 @@ function sortPeopleArray(people) {
         });
 }
 
-// Add this helper function after getUserRef()
-async function updateEventsForTribe(tribeId, updatedMembers) {
-    if (!currentUser) return;
-    
-    try {
-        const eventsRef = ref(database, `${getUserRef()}/events`);
-        const eventsSnap = await get(eventsRef);
-        const events = eventsSnap.val() || {};
-
-        // Find all events using this tribe
-        const updates = {};
-        Object.entries(events).forEach(([eventId, event]) => {
-            if (event.tribeId === tribeId) {
-                // Keep existing votes for remaining members, remove votes for removed members
-                const updatedParticipants = {};
-                Object.entries(event.participants || {}).forEach(([name, data]) => {
-                    if (updatedMembers.includes(data.memberId)) {
-                        updatedParticipants[name] = data;
-                    }
-                });
-                updates[`${getUserRef()}/events/${eventId}/participants`] = updatedParticipants;
-            }
-        });
-
-        // Apply all updates
-        for (const [path, value] of Object.entries(updates)) {
-            await set(ref(database, path), value);
-        }
-    } catch (error) {
-        console.error("Error updating events for tribe:", error);
-        throw error;
-    }
-}
-
 // Authentication functions
 async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
@@ -217,7 +183,6 @@ window.deletePerson = async function(personId) {
                 if (tribe.members?.includes(personId)) {
                     const updatedMembers = tribe.members.filter(id => id !== personId);
                     await set(ref(database, `${getUserRef()}/tribes/${tribeId}/members`), updatedMembers);
-                    await updateEventsForTribe(tribeId, updatedMembers);
                 }
             }
 
@@ -961,7 +926,7 @@ async function createTribe(e) {
     try {
         const tribesRef = ref(database, `${getUserRef()}/tribes`);
         
-        // If we're editing an existing tribe, update it instead of creating new
+        // If we're editing an existing tribe, update it without touching events
         if (currentEditingTribeId) {
             const tribeRef = ref(database, `${getUserRef()}/tribes/${currentEditingTribeId}`);
             await set(tribeRef, {
@@ -969,10 +934,7 @@ async function createTribe(e) {
                 members: selectedMembers,
                 updated: new Date().toISOString()
             });
-            
-            // Update associated events
-            await updateEventsForTribe(currentEditingTribeId, selectedMembers);
-            alert('Group updated successfully');  // Add this line
+            alert('Group updated successfully');
         } else {
             // Create new tribe
             const newTribeRef = push(tribesRef);
