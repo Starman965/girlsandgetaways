@@ -19,7 +19,10 @@ import {
     onAuthStateChanged, 
     signOut,
     updateProfile,
-    updateEmail
+    updateEmail,
+    deleteUser,
+    reauthenticateWithCredential,
+    EmailAuthProvider
 } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
 
 // Initialize Firebase
@@ -119,25 +122,73 @@ async function updateProfileInfo(e) {
     const newName = document.getElementById('profileName').value;
     const newEmail = document.getElementById('profileEmail').value;
     
-    if (!newName || !newEmail) {
-        alert('Please enter both name and email');
-        return;
-    }
-
+    if (!currentUser) return;
+    
     try {
-        await updateProfile(auth.currentUser, {
-            displayName: newName
-        });
-        await updateEmail(auth.currentUser, newEmail);
+        const updates = [];
         
-        alert('Profile updated successfully');
+        // Update display name if changed
+        if (newName !== currentUser.displayName) {
+            updates.push(updateProfile(currentUser, { displayName: newName }));
+        }
+        
+        // Update email if changed
+        if (newEmail !== currentUser.email) {
+            updates.push(updateEmail(currentUser, newEmail));
+        }
+        
+        await Promise.all(updates);
+        
+        // Update UI
         document.getElementById('userName').textContent = newName;
+        alert('Profile updated successfully');
     } catch (error) {
         console.error("Error updating profile:", error);
         if (error.code === 'auth/requires-recent-login') {
             alert("For security reasons, please log out and log back in before changing your email.");
         } else {
             alert("Error updating profile: " + error.message);
+        }
+    }
+}
+
+async function deleteAccount() {
+    if (!currentUser) return;
+    
+    const confirmDelete = confirm(
+        'Are you absolutely sure you want to delete your account? This action cannot be undone.'
+    );
+    
+    if (!confirmDelete) return;
+
+    try {
+        // First, delete all user data from the database
+        const userRef = ref(database, `users/${currentUser.uid}`);
+        await remove(userRef);
+
+        // Then delete the user account
+        await deleteUser(currentUser);
+        
+        // Redirect to login page
+        window.location.href = 'login.html';
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        
+        if (error.code === 'auth/requires-recent-login') {
+            // Handle re-authentication
+            const password = prompt('For security, please enter your password to confirm account deletion:');
+            if (password) {
+                try {
+                    const credential = EmailAuthProvider.credential(currentUser.email, password);
+                    await reauthenticateWithCredential(currentUser, credential);
+                    // Retry deletion after re-authentication
+                    await deleteAccount();
+                } catch (reAuthError) {
+                    alert('Invalid password. Account deletion canceled.');
+                }
+            }
+        } else {
+            alert('Error deleting account: ' + error.message);
         }
     }
 }
@@ -1157,8 +1208,8 @@ document.addEventListener('DOMContentLoaded', () => {
         radio.addEventListener('change', handleEventTypeChange);
     });
 
-    // Add tab switching listeners
-    document.querySelectorAll('.tab-button')?.forEach(button => {
+    // Add tab switching listeners for both nav buttons and settings button
+    document.querySelectorAll('.tab-button, .settings-button')?.forEach(button => {
         button.addEventListener('click', () => switchTab(button.dataset.tab));
     });
 
@@ -1237,6 +1288,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(`${tab.dataset.section}Section`).classList.add('active');
         });
     });
+
+    // Add delete account button listener
+    document.getElementById('deleteAccountBtn')?.addEventListener('click', deleteAccount);
 });
 
 // Attach necessary functions to window object for HTML access
