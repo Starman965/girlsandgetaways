@@ -466,7 +466,8 @@ textarea {
     color: var(--subhead-color);
     cursor: pointer;
     font-weight: 500;
-    padding: 8px 0;
+    padding: 16px 0;
+    margin-bottom: 16px;
 }
 
 .back-to-list:hover {
@@ -475,6 +476,7 @@ textarea {
 
 .event-title-section {
     flex-grow: 1;
+    width: 100%;
 }
 
 .event-title-section h2 {
@@ -491,7 +493,8 @@ textarea {
     font-size: 14px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 24px;
+    margin-top: 8px;
 }
 
 .meta-item {

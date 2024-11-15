@@ -521,63 +521,52 @@ async function showEventDetail(eventId) {
 function renderEventDetail(eventId, eventData) {
     const detailContent = document.getElementById('eventDetail');
     detailContent.innerHTML = `
+        <button onclick="showEventsList()" class="back-to-list">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6"/>
+            </svg>
+            Back to Events
+        </button>
+
         <div class="detail-header">
-            <div class="header-left">
-                <div class="event-type-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <path d="M22 16.32A11.5 11.5 0 0 0 10.5 5a11.5 11.5 0 0 0 11.5 11.32z"/>
-                        <path d="M10.5 5a11.5 11.5 0 0 0 0 23"/>
-                        <path d="M10.5 5a11.5 11.5 0 0 1 0 23"/>
-                        <path d="M2 16h20"/>
-                    </svg>
-                </div>
-                <div class="event-title-section">
-                    <h2>${eventData.title}</h2>
-                    <div class="event-meta">
-                        <div class="meta-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            <div class="event-title-section">
+                <h2>${eventData.title}</h2>
+                <div class="event-meta">
+                    <div class="meta-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        ${eventData.tribeInfo.name}
+                    </div>
+                    <div class="meta-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        Created ${new Date(eventData.created).toLocaleDateString()}
+                    </div>
+                    <div class="event-actions">
+                        <button class="action-button edit" onclick="editEventDates('${eventId}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
                             </svg>
-                            ${eventData.tribeInfo.name}
-                        </div>
-                        <div class="meta-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                                <line x1="16" y1="2" x2="16" y2="6"/>
-                                <line x1="8" y1="2" x2="8" y2="6"/>
-                                <line x1="3" y1="10" x2="21" y2="10"/>
+                        </button>
+                        <button class="action-button delete" onclick="deleteEvent('${eventId}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
                             </svg>
-                            Created ${new Date(eventData.created).toLocaleDateString()}
-                        </div>
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="header-actions">
-                <button class="action-button edit" onclick="editEventDates('${eventId}')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-                    </svg>
-                </button>
-                <button class="action-button delete" onclick="deleteEvent('${eventId}')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
-            </div>
         </div>
-    `;
-    // Call the content rendering function
-    renderEventDetailContent(eventId, eventData);
-}
 
-function renderEventDetailContent(eventId, eventData) {
-    const detailContent = document.getElementById('eventDetail');
-    detailContent.innerHTML += `
         <div class="detail-content">
             <div class="detail-section">
                 <div class="description-section">
