@@ -23,7 +23,10 @@
             
             <div class="user-profile">
                 <div class="user-profile-header">
-                    <span id="userName"></span>
+                    <div class="user-name-container">
+                        <div class="user-greeting">Howdy,</div>
+                        <span id="userName"></span>
+                    </div>
                     <button class="settings-button" data-tab="profile">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"/>
@@ -31,7 +34,6 @@
                         </svg>
                     </button>
                 </div>
-                <button id="logoutBtn" class="logout-btn">Logout</button>
             </div>
             
             <nav class="sidebar-nav">
@@ -290,7 +292,10 @@
                 <input type="email" id="profileEmail" required>
             </div>
 
-            <button type="submit" class="primary-button">Update Profile</button>
+            <div class="profile-actions">
+                <button type="submit" class="primary-button">Update Profile</button>
+                <button type="button" id="logoutBtn" class="secondary-button">Logout</button>
+            </div>
         </form>
 
         <div class="danger-zone">
