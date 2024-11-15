@@ -1045,3 +1045,10 @@ textarea {
     height: 20px;
     flex-shrink: 0;
 }
+
+.section-tip {
+    color: #666;
+    font-size: 14px;
+    margin: 8px 0 16px 0;
+    font-style: italic;
+}
